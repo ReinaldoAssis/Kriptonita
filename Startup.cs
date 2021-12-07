@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Kriptonita.Data;
+using MudBlazor.Services;
+using ElectronNET.API;  
 
 namespace Kriptonita
 {
@@ -19,6 +21,7 @@ namespace Kriptonita
         {
             Configuration = configuration;
         }
+        
 
         public IConfiguration Configuration { get; }
 
@@ -29,7 +32,16 @@ namespace Kriptonita
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
+            services.AddMudServices();
         }
+        
+        private async void CreateWindow()  
+        {  
+            var window = await Electron.WindowManager.CreateWindowAsync();  
+            window.OnClosed += () => {  
+                Electron.App.Quit();  
+            };  
+        } 
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -55,6 +67,11 @@ namespace Kriptonita
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });
+            
+            if (HybridSupport.IsElectronActive)  
+            {  
+                CreateWindow();  
+            } 
         }
     }
 }
