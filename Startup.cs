@@ -11,7 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Kriptonita.Data;
 using MudBlazor.Services;
-using ElectronNET.API;  
+using ElectronNET.API;
+using ElectronNET.API.Entities;
 
 namespace Kriptonita
 {
@@ -37,7 +38,7 @@ namespace Kriptonita
         
         private async void CreateWindow()  
         {  
-            var window = await Electron.WindowManager.CreateWindowAsync();  
+            var window = await Electron.WindowManager.CreateWindowAsync(new BrowserWindowOptions(){AutoHideMenuBar = true});  
             window.OnClosed += () => {  
                 Electron.App.Quit();  
             };  
