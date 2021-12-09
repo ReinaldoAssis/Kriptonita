@@ -1,0 +1,52 @@
+﻿@page "/ferramentas/ehprimo"
+@using System.Numerics
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Determinar se é primo</MudText>
+
+<div style="vertical-align: center">
+    <MudItem Style="display: flex; width: 400px">
+        <MudTextField T="string" @bind-Value="@Numero" Label="Número" Variant="Variant.Outlined"></MudTextField>
+        <MudButton Style="margin-left: 10px" Size="Size.Small" OnClick="Testar" Variant="Variant.Filled" Color="Color.Dark">Testar</MudButton>
+    </MudItem>
+    <br/>
+    @if (show)
+    {
+        @foreach (var item in _ehprimo)
+        {
+            <MudText Typo="Typo.body1">O numero @item.Key @(item.Value ? "é primo!" : "não é primo.")</MudText>
+            <br/>
+        }
+    }
+</div>
+
+@code{
+
+    public string Numero = "";
+    private bool show;
+    private Dictionary<BigInteger, bool> _ehprimo = new Dictionary<BigInteger, bool>();
+    
+    async void Testar()
+    {
+        _ehprimo = new Dictionary<BigInteger, bool>();
+        show = true;
+
+        if (Numero.Contains(',')) //checa se tem uma lista de números na textbox
+        {
+            foreach (var n in Numero.Split(',')) //testa cada um dos números na lista
+            {
+                BigInteger nlong = BigInteger.Parse(n);
+                _ehprimo.Add(nlong, await _principal.DeterminarSeEprimo(nlong));
+            }
+        }
+        else
+        {
+            BigInteger nlong = BigInteger.Parse(Numero);
+            _ehprimo.Add(nlong, await _principal.DeterminarSeEprimo(nlong));
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+}

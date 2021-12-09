@@ -1,0 +1,26 @@
+﻿@page "/ferramentas/60s"
+
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Gerar números primos sequenciais em 60s</MudText>
+
+<MudCheckBox T="bool" Label="Apenas mostrar último número gerado"></MudCheckBox><br/>   
+<MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Começar!</MudButton>
+
+<MudTextField Lines="20" @bind-Value="@listastr" T="string" Placeholder="A sequência aparecerá aqui."></MudTextField>
+
+@code{
+
+    string listastr = "";
+    async void Gerar()
+    {
+        long[] lista = await _principal.GerarPrimosSequenciais();
+        foreach (var x in lista)
+        {
+            listastr += $"{x}, ";
+        }
+        listastr = listastr.Remove(listastr.LastIndexOf(','), 1);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}
