@@ -1,26 +1,105 @@
 ﻿@page "/ferramentas/60s"
+@using System.Diagnostics
+@using System.IO
+@using System.Timers
+@using ElectronNET.API
+@using ElectronNET.API.Entities
+@using Size = MudBlazor.Size
+
 
 @inject IPrincipal _principal
 
 <MudText Typo="Typo.h4">Gerar números primos sequenciais em 60s</MudText>
-
-<MudCheckBox T="bool" Label="Apenas mostrar último número gerado"></MudCheckBox><br/>   
-<MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Começar!</MudButton>
+<MudItem Style="display: flex">
+    <MudCheckBox T="bool" Label="Rodar em multiplas threads" @bind-Checked="@paralelo"></MudCheckBox><br/>   
+    <MudTooltip Text="Deletar arquivos temporários" Style="margin-left: 50px">
+        <MudIconButton Color="Color.Error" Icon="@Icons.Filled.Delete" OnClick="@Limpeza"></MudIconButton>
+    </MudTooltip>
+</MudItem>
+<MudItem Style="display: flex">
+    <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@limite" Label="Número limite" Variant="Variant.Outlined"></MudTextField>
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Começar!</MudButton>
+   @if (contar)
+   {
+       <MudText Style="margin-left: 10px" Typo="Typo.h6" Color="Color.Error" >@segundos</MudText>
+   } 
+</MudItem>
 
 <MudTextField Lines="20" @bind-Value="@listastr" T="string" Placeholder="A sequência aparecerá aqui."></MudTextField>
 
 @code{
 
     string listastr = "";
+    int _timespan = 60;
+    int segundos = 3;
+    bool contar = true;
+    string limite = "";
+    Timer tm = new Timer(1000);
+
+    bool paralelo = false;
+
+    protected override void OnInitialized()
+    {
+        segundos = _timespan;
+        //tm.Elapsed += async (Object source, System.Timers.ElapsedEventArgs e) => await Contar(tm);
+        base.OnInitialized();
+    }
+
     async void Gerar()
     {
-        long[] lista = await _principal.GerarPrimosSequenciais();
-        foreach (var x in lista)
+        try
         {
-            listastr += $"{x}, ";
-        }
-        listastr = listastr.Remove(listastr.LastIndexOf(','), 1);
+            await Electron.WindowManager.CreateWindowAsync(new BrowserWindowOptions(){Width = 300, Height = 300, Title = "Cronometro", AutoHideMenuBar = true},$"http://localhost:{BridgeSettings.WebPort}/ferramentas/relogio");
+        }catch{}
+        TaskFactory tf = new TaskFactory();
+        tf.StartNew(IniciarTimer);
+        tf.StartNew((() =>
+        {
+            int lm = int.Parse(limite);
+            string file = _principal.GerarPrimosSequenciais(timespan:_timespan, paralelo:paralelo, limit: lm).Result;
+            if (lm <= 10000000)
+            {
+                tf.StartNew(() =>
+                {
+                    using (var x = new StreamReader(file))
+                    {
+                            listastr = x.ReadToEndAsync().Result;
+                            InvokeAsync(StateHasChanged);
+                    }
+                });
+            }
+            else
+            {
+                Electron.Shell.OpenExternalAsync(file);
+                listastr = file;
+                InvokeAsync(StateHasChanged);
+            }
+            Console.WriteLine(file);
+        }));
+
         await InvokeAsync(StateHasChanged);
     }
+
+    async Task IniciarTimer()
+    {
+        segundos = _timespan;
+        contar = true;
+        tm.Enabled = true;
+    }
+
+    void Limpeza() => _principal.Limpeza("kriptonita");
+
+    async Task Contar(Timer tm)
+    {
+        if (segundos > 0) segundos--;
+        else
+        {
+            segundos = _timespan;
+            tm.Enabled = false;
+        }
+        Console.WriteLine(segundos);
+        await InvokeAsync(StateHasChanged);
+    }
+
 
 }

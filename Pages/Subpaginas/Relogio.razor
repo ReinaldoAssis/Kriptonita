@@ -1,0 +1,37 @@
+﻿@page "/ferramentas/relogio"
+@using System.Timers
+@using ElectronNET.API
+
+@layout EmptyLayout
+
+<div style="align-content: center; align-items: center; vertical-align: center; display: flex">
+    <MudText Style="margin-left: auto; margin-right: auto; margin-top: 25%;" Color="Color.Error" Typo="Typo.h1" >@Count</MudText>
+</div>
+
+@code{
+
+    Timer tm = new Timer(1000);
+    int Count = 60;
+    //Style="margin-right: auto; margin-left: auto"
+
+    protected override void OnInitialized()
+    {
+        tm.Elapsed += async (Object source, System.Timers.ElapsedEventArgs e) => await Contar(tm);
+        Count = 60;
+        tm.Enabled = true;
+        base.OnInitialized();
+    }
+
+    async Task Contar(Timer tm)
+    {
+        if (Count > 0) Count--;
+        else
+        {
+            tm.Enabled = false;
+            tm.Dispose();
+        }
+        //Console.WriteLine(Count);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

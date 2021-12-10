@@ -1,0 +1,34 @@
+﻿@page "/ferramentas/fatoraremprimos"
+@using System.Numerics
+
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Fatorar em números primos</MudText>
+
+<MudItem Style="display: flex">
+    <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@numero" Label="Número" Variant="Variant.Outlined"></MudTextField>
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Começar!</MudButton>
+</MudItem>
+
+<MudTextField Lines="20" @bind-Value="@listastr" T="string" Placeholder="Os fatores aparecerão aqui."></MudTextField>
+
+@code{
+
+    string listastr = "";
+    string numero = "";
+    Dictionary<string, int> dic = new Dictionary<string, int>();
+
+    async void Gerar()
+    {
+        listastr = "";
+        dic = await _principal.FatorarEmPrimos(BigInteger.Parse(numero));
+        foreach (var fator in dic)
+        {
+            string pot = fator.Value != 1 ? $"^{fator.Value} ● " : " ● ";
+            listastr += $"{fator.Key}{pot}";
+        }
+        listastr = listastr.Remove(listastr.LastIndexOf('●'), 2)+".";
+        await InvokeAsync(StateHasChanged);
+    }
+    
+}

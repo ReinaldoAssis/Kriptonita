@@ -1,6 +1,8 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -9,7 +11,11 @@ using System.Threading.Tasks;
 public interface IPrincipal
 {
     public Task<bool> DeterminarSeEprimo(BigInteger primo);
-    public Task<long[]> GerarPrimosSequenciais();
+    public Task<string> GerarPrimosSequenciais(int timespan=3, bool paralelo=true, long limit=10000000);
+
+    public Task<Dictionary<string,int>> FatorarEmPrimos(BigInteger numero);
+
+    public void Limpeza(string contem);
 }
 
 public class Principal : IPrincipal
@@ -29,27 +35,168 @@ public class Principal : IPrincipal
         return await Task.Run(() => MillerRabinPrimo(primo, 10)); 
     }
 
-    public async Task<long[]> GerarPrimosSequenciais()
+    public async Task<string> GerarPrimosSequenciais(int timespan, bool paralelo, long limit)
     {
-        //9.223.372.036.854.775.807
-        
+        //9.223.372.036.854.775.807 - limite long
 
-        var gerar = Task.Run(() =>
+        if (paralelo) return await GerarPrimosSequenciaisParalelo(timespan);
+        else return await GerarPrimosSequenciaisSingle(timespan, limit: limit);
+    }
+
+    public async Task<string> GerarPrimosSequenciaisParalelo(int timespan)
+    {
+        string ar = "";
+        DateTime t = DateTime.Now.AddSeconds(timespan);
+        //long limit = 9223372036854775800;
+        long limit = 775800;
+        Parallel.For(3, limit, (x,loop) =>
         {
-            List<long> ar = new List<long>();
-            long limit = 9223372036854775800;
-            Parallel.For(3, limit, x =>
-            {
-                if(MillerRabinPrimo(new BigInteger(x),10)) ar.Add(x);
-            });
-            return ar;
-
+            if (MillerRabinPrimo(new BigInteger(x), 10)) ar += $"{x}, ";
+            if(t.CompareTo(DateTime.Now) <= 0) loop.Stop();
         });
+        return ar;
+    }
+    
+    public async Task<string> GerarPrimosSequenciaisSingle(int timespan, long limit=10000000)
+    {
+        string ar = "";
 
-        bool finalizou = gerar.Wait(TimeSpan.FromSeconds(5));
-        if (finalizou) return gerar.Result.OrderBy(x => x).ToArray();
-        else return null;
+        await Task.Run(() =>
+        {
+            ar = EratostenesPrimos(limit, timespan);
+        });
+        
+        return ar;
+    }
 
+    public async Task<Dictionary<string,int>> FatorarEmPrimos(BigInteger numero)
+    {
+        Dictionary<string,int> fatores = new Dictionary<string, int>();
+        BigInteger resto = numero;
+        Stopwatch relogio = new Stopwatch();
+        relogio.Start();
+        while (resto != 1)
+        {
+            ChecarTimeout(relogio);
+            if (resto % 2 == 0){ //se for divisível por 2 - primeiro primo
+
+                if (fatores.ContainsKey("2")) fatores["2"] += 1; //se já existe o fator 2, adicione mais uma ocorrência
+                else fatores.Add("2", 1); //caso não, adicione-o
+                
+                resto /= 2;
+            }
+            else //caso não seja, tentar sequencialmente em +2 (para sobrecarga de números pares)
+            {
+                BigInteger n = new BigInteger(3);
+                while (resto % n != 0)
+                {
+                    n += 2;
+                    ChecarTimeout(relogio);
+                    bool ehprimo = MillerRabinPrimo(n, 20);
+                    while (!ehprimo){
+                        ChecarTimeout(relogio);
+                        //Console.WriteLine($"resto: {resto} | n: {n}");
+                        n += 2; //enquanto não for primo, incrementar de 2 em 2 - evita testar números pares
+                        ehprimo = MillerRabinPrimo(n, 20);
+                    }
+
+                }
+                //quando finalmente achar um primo que divide
+                if (fatores.ContainsKey($"{n}")) fatores[$"{n}"] += 1; //incrementa uma ocorrência
+                else fatores.Add($"{n}",1);//adiciona na lista de fatores
+                
+                resto /= n; //resto vai ser igual a divisão do resto por n (primo)
+            }
+            //Console.WriteLine(resto);
+            
+        }
+
+        return fatores;
+    }
+
+    static void ChecarTimeout(Stopwatch relogio)
+    {
+        if (relogio.ElapsedMilliseconds > 3000) throw new TimeoutException("Error ao fatorar primos, timeout."); //se está dentro do loop a mais de 1 minuto, quebrar.
+    }
+    
+    static bool ChecarTimeout(Stopwatch relogio, int mili)
+    {
+        if (relogio.ElapsedMilliseconds > mili){
+            Console.WriteLine("Eratostenes passou do tempo limite!");
+            return true; //passou o tempo
+        }
+        else return false;
+    }
+
+    public static string EratostenesPrimos(long limite, int segundos)
+    {
+        bool primeiroSave = true;
+        string file = Path.GetTempPath()+"Primos"+Guid.NewGuid().ToString()+".kriptonita";
+        void SalvarPrimos(List<int> lista)
+        {
+            if (primeiroSave)
+            {
+                using (var x = File.CreateText(file))
+                {
+                    x.WriteLine(string.Join(", ",lista));
+                }
+
+                primeiroSave = false;
+            }
+            else
+            {
+                using (var x = File.AppendText(file))
+                {
+                    x.WriteLine(string.Join(", ",lista));
+                }
+            }
+        }
+
+        bool ChecarESalvar(List<int> lista)
+        {
+            if (lista.Count > 100000)
+            {
+                SalvarPrimos(lista);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        bool[] Crivo = new bool[limite+1];
+        List<int> primos = new List<int>();
+
+        Stopwatch relogio = new Stopwatch();
+        relogio.Start();
+        
+        for (int i = 0; i <= limite; i++) Crivo[i] = true; //inicialmente todos os números são primos
+
+        for (int i = 2; i * i <= limite; i++)
+        {
+            if (Crivo[i])
+            {
+                primos.Add(i);
+                if (ChecarESalvar(primos)) primos.Clear();
+                for (int j = i * i; j <= limite; j += i) Crivo[j] = false; //multiplos de i não são primos
+            }
+        }
+        
+        Console.WriteLine($"Main: {relogio.Elapsed.Milliseconds}");
+
+        for (int i = (int)Math.Ceiling(Math.Sqrt(limite))-2; i <= limite; i++)
+        {
+            if(Crivo[i]) primos.Add(i);
+            if (ChecarESalvar(primos)) primos.Clear();
+        }
+        SalvarPrimos(primos);
+        
+        relogio.Stop();
+        Console.WriteLine($"Str: {relogio.Elapsed.Milliseconds}");
+
+
+        return file;
     }
     
     public static bool MillerRabinPrimo(BigInteger primo, int precisao)
@@ -62,7 +209,7 @@ public class Principal : IPrincipal
                 BigInteger d = primo - 1;
                 int s = 0;
      
-                while(d % 2 == 0)
+                while(d % 2 == 0) //fatora até não ser divisível por 2
                 {
                     d /= 2;
                     s += 1;
@@ -102,4 +249,12 @@ public class Principal : IPrincipal
      
                 return true;
             }
+
+    //usado para limpar arquivos armazenados no diretorio temporario
+    public void Limpeza(string contem)
+    {
+        string pt = Path.GetTempPath();
+        var files = Directory.GetFiles(pt, "*.kriptonita").Where(x => x.ToLower().Contains(contem));
+        foreach (var f in files) if(File.Exists(f)) File.Delete(f);
+    }
 }
