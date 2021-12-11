@@ -2,7 +2,14 @@
 @using System.Numerics
 @inject IPrincipal _principal
 
-<MudText Typo="Typo.h4">@conta.ToUpper() com fatores primos</MudText>
+@if (conta != "euclides")
+{
+    <MudText Typo="Typo.h4">@conta.ToUpper() com fatores primos</MudText>
+}
+else
+{
+    <MudText Typo="Typo.h4">MDC com algoritmo de Euclides</MudText>
+}
 
 <MudItem Style="display: flex; padding-top: 15px">
     <MudTooltip Text="Separados por ','">
@@ -12,24 +19,73 @@
         <MudSelect T="string" Label="Conta"  @bind-Value="@conta">
             <MudSelectItem T="string" Value="@("mdc")">MDC</MudSelectItem>
             <MudSelectItem T="string" Value="@("mmc")">MMC</MudSelectItem>
+            <MudSelectItem T="string" Value="@("euclides")">MDC Euclides</MudSelectItem>
         </MudSelect>
     </div>
     <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Medium" OnClick="@Calcular">Calcular</MudButton> 
 </MudItem>
     <MudText Typo="Typo.h5" Style="margin-top:10px">Resultado: @result</MudText>
 
+<MudTextField Lines="20" @bind-Value="@listastr" T="string" Placeholder="A sequência aparecerá aqui."></MudTextField>
 
 @code{
 
     string txt = "";
     string conta = "mdc";
+    string listastr = "";
+    
     BigInteger result = new BigInteger(0);
 
     async void Calcular()
     {
+        listastr = "";
         List<BigInteger> ns = txt.Split(',').Select(x => BigInteger.Parse(x)).ToList();
-        if (conta == "mdc") result = _principal.MDC(ns).Result;
-        else result = _principal.MMC(ns).Result;
+        if (conta == "mdc")
+        {
+            dynamic obj = _principal.MDC(ns).Result;
+            result = obj.result;
+            int i = 0;
+            foreach (var lista in obj.listas)
+            {
+                listastr += $"{ns[i]}: ";
+                foreach (var fator in lista)
+                {
+                    string pot = fator.Value != 1 ? $"^{fator.Value} ● " : " ● ";
+                    listastr += $"{fator.Key}{pot}";
+                }
+                listastr = listastr.Remove(listastr.LastIndexOf('●'), 2)+".";
+                i++;
+                listastr += "\n";
+            }
+        }
+        else if(conta == "mmc")
+        {
+            dynamic obj = _principal.MMC(ns).Result;
+            result = obj.result;
+            int i = 0;
+            foreach (var lista in obj.listas)
+            {
+                listastr += $"{ns[i]}: ";
+                foreach (var fator in lista)
+                {
+                    string pot = fator.Value != 1 ? $"^{fator.Value} ● " : " ● ";
+                    listastr += $"{fator.Key}{pot}";
+                }
+                listastr = listastr.Remove(listastr.LastIndexOf('●'), 2)+".";
+                i++;
+                listastr += "\n";
+            }
+        }
+        else
+        {
+            dynamic obj = _principal.MDCEuclides((int) ns[0], (int) ns[1]);
+            result = obj.result;
+            foreach (var resto in obj.restos)
+            {
+                listastr += $"{resto}, ";
+            }
+           // listastr = listastr.Remove(listastr.LastIndexOf(','), 1)+".";
+        }
     }
     
 }

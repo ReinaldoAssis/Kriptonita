@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -15,8 +16,10 @@ public interface IPrincipal
 
     public Task<Dictionary<string,int>> FatorarEmPrimos(BigInteger numero);
 
-    public Task<BigInteger> MDC(List<BigInteger> ns); 
-    public Task<BigInteger> MMC(List<BigInteger> ns); 
+    public Task<dynamic> MDC(List<BigInteger> ns); 
+    public Task<dynamic> MMC(List<BigInteger> ns);
+
+    public dynamic MDCEuclides(int a, int b);
 
     public void Limpeza(string contem);
 }
@@ -117,14 +120,17 @@ public class Principal : IPrincipal
         return fatores;
     }
 
-    public async Task<BigInteger> MDC(List<BigInteger> ns)
+    public async Task<dynamic> MDC(List<BigInteger> ns)
     {
         List<Dictionary<string, int>> fatoresNs = new List<Dictionary<string, int>>();
         Dictionary<string, int> fatoresComuns = new Dictionary<string, int>();
+        List<Dictionary<string, int>> imutavel = new List<Dictionary<string, int>>();
     
         foreach (var item in ns)
         {
-            fatoresNs.Add(await FatorarEmPrimos(item));
+            Dictionary<string, int> fatores = await FatorarEmPrimos(item);
+            fatoresNs.Add(fatores);
+            imutavel.Add(fatores);
         }
 
         Dictionary<string, int> inicial = new Dictionary<string, int>();
@@ -151,12 +157,16 @@ public class Principal : IPrincipal
             Console.WriteLine(item.Key+" | "+item.Value);
             result *= BigInteger.Pow(BigInteger.Parse(item.Key), (int)item.Value); //para cada fator comum multiplicar elevado ao minimo expoente
         }
-    
-        return result;
+
+        dynamic obj = new ExpandoObject();
+        obj.result = result;
+        obj.listas = imutavel;
+
+        return obj;
     
     }
     
-    public async Task<BigInteger> MMC(List<BigInteger> ns)
+    public async Task<dynamic> MMC(List<BigInteger> ns)
     {
         List<Dictionary<string, int>> fatoresNs = new List<Dictionary<string, int>>();
 
@@ -187,9 +197,48 @@ public class Principal : IPrincipal
             //Console.WriteLine("Fator: "+item.Key+" | "+item.Value);
             result *= BigInteger.Pow(BigInteger.Parse(item.Key), (int)item.Value); //para cada fator comum multiplicar elevado ao minimo expoente
         }
-    
-        return result;
-    
+
+        dynamic obj = new ExpandoObject();
+        obj.result = result;
+        obj.listas = fatoresNs;
+        return obj;
+
+    }
+
+    public dynamic MDCEuclides(int a, int b)
+    {
+        Stopwatch relogio = new Stopwatch();
+        relogio.Start();
+
+        int aux = a;
+        a = Math.Max(a, b);
+        b = Math.Min(aux, b);
+        Console.WriteLine($"max {a} min {b}");
+
+        List<int> restos = new List<int>();
+
+        aux = a % b;
+        restos.Add(aux);
+
+        if (aux != 0)
+        {
+            while (b % aux != 0)
+            {
+                ChecarTimeout(relogio, 2000); //evita uma repetição infinita
+                int aux2 = aux;
+                aux = b % aux;
+                restos.Add(aux);
+                b = aux2;
+                Console.WriteLine($"Resto {aux} Ultimo {b}");
+            }
+        }
+
+        relogio.Stop();
+
+        dynamic obj = new ExpandoObject();
+        obj.result = aux;
+        obj.restos = restos;
+        return obj;
     }
 
     static void ChecarTimeout(Stopwatch relogio)
