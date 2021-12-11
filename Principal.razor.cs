@@ -15,6 +15,9 @@ public interface IPrincipal
 
     public Task<Dictionary<string,int>> FatorarEmPrimos(BigInteger numero);
 
+    public Task<BigInteger> MDC(List<BigInteger> ns); 
+    public Task<BigInteger> MMC(List<BigInteger> ns); 
+
     public void Limpeza(string contem);
 }
 
@@ -112,6 +115,81 @@ public class Principal : IPrincipal
         }
 
         return fatores;
+    }
+
+    public async Task<BigInteger> MDC(List<BigInteger> ns)
+    {
+        List<Dictionary<string, int>> fatoresNs = new List<Dictionary<string, int>>();
+        Dictionary<string, int> fatoresComuns = new Dictionary<string, int>();
+    
+        foreach (var item in ns)
+        {
+            fatoresNs.Add(await FatorarEmPrimos(item));
+        }
+
+        Dictionary<string, int> inicial = new Dictionary<string, int>();
+        inicial = fatoresNs.First();
+        fatoresNs.Remove(inicial);
+        foreach (var fator in inicial)
+        {
+            if (fatoresNs.TrueForAll(x => x.ContainsKey(fator.Key)))
+            {
+                int min = fator.Value;
+                foreach (var lista in fatoresNs.Where(x => x.ContainsKey(fator.Key)))
+                {
+                    foreach (var comum in lista) min = Math.Min(comum.Value, min);
+                }
+                fatoresComuns.Add(fator.Key, min);
+            }
+        }
+        
+                
+    
+        BigInteger result = new BigInteger(1);
+        foreach (var item in fatoresComuns)
+        {
+            Console.WriteLine(item.Key+" | "+item.Value);
+            result *= BigInteger.Pow(BigInteger.Parse(item.Key), (int)item.Value); //para cada fator comum multiplicar elevado ao minimo expoente
+        }
+    
+        return result;
+    
+    }
+    
+    public async Task<BigInteger> MMC(List<BigInteger> ns)
+    {
+        List<Dictionary<string, int>> fatoresNs = new List<Dictionary<string, int>>();
+
+        foreach (var item in ns)
+        {
+            Dictionary<string, int> fatores = await FatorarEmPrimos(item);
+            fatoresNs.Add(fatores);
+        }
+
+        Dictionary<string, int> resultante = new Dictionary<string, int>();
+
+        foreach (var lista in fatoresNs)
+        {
+            foreach (var fator in lista)
+            {
+                if(resultante.ContainsKey(fator.Key) == false) resultante.Add(fator.Key, fator.Value); //se não existir, adicione
+                else
+                {
+                    resultante[fator.Key] = Math.Max(resultante[fator.Key], fator.Value); //se exisistir, compare os expoentes e pegue o maior
+                }
+            }
+        }        
+                
+    
+        BigInteger result = new BigInteger(1);
+        foreach (var item in resultante)
+        {
+            //Console.WriteLine("Fator: "+item.Key+" | "+item.Value);
+            result *= BigInteger.Pow(BigInteger.Parse(item.Key), (int)item.Value); //para cada fator comum multiplicar elevado ao minimo expoente
+        }
+    
+        return result;
+    
     }
 
     static void ChecarTimeout(Stopwatch relogio)
