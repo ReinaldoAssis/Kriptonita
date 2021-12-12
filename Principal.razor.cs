@@ -300,8 +300,12 @@ public class Principal : IPrincipal
                 
                 return new {inverso=new {existe=false,valor=_result.b-_result.y},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
             }
+
+            long _valor = 0;
+            if (b == _result.b) _valor = (_result.x < 0 ? b + _result.x : _result.x);
+            else _valor = (_result.y < 0 ? b + _result.y : _result.y);
             
-            return new {inverso=new {existe=true,valor=b-Math.Abs(_result.y)},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};;
+            return new {inverso=new {existe=true,valor=_valor},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};;
         }
         
         switch (operacao.ToLower())
@@ -404,6 +408,14 @@ public class Principal : IPrincipal
 
         return file;
     }
+
+    //metodo para calcular congruencia linear, é extremamente ineficiente, porém é simples de implementar
+    //idealmente seria usado o teorema de euler para congruencias lineares, o cálculo seria imensamente mais eficaz
+    //mas ainda estou estudando o teorema e não saberia implementa-lo.
+    // public dynamic CongruenciaLinear()
+    // {
+    //     
+    // }
     
     public static bool MillerRabinPrimo(BigInteger primo, int precisao)
             {

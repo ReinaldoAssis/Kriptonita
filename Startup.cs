@@ -35,6 +35,7 @@ namespace Kriptonita
             services.AddSingleton<WeatherForecastService>();
             services.AddMudServices();
             services.AddSingleton<IPrincipal,Principal>();
+            services.AddSingleton<ISettings,Settings>();
         }
         
         private async void CreateWindow()  

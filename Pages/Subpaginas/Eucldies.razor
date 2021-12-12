@@ -21,20 +21,20 @@
 {
     @if (result.x != -24102003)
     {
-        <MudText Typo="Typo.body1">@result.mdc = @result.x*@result.a @(result.y >= 0 ? "+" :"") @result.y*@result.b</MudText>
+        <MudText Typo="Typo.h6">@result.mdc = @result.x*@result.a @(result.y >= 0 ? "+" :"") @result.y*@result.b</MudText>
     }
 }
 else
 {
     @if (result.inverso.existe)
     {
-        <MudText Typo="Typo.body1">O inverso de @result.a (mod @result.b) é @result.inverso.valor</MudText>
+        <MudText Typo="Typo.h6">O inverso de @result.a (mod @result.b) é @result.inverso.valor</MudText>
     }
     else
     {
         @if (result.mdc != 1 && result.x != -24102003)
         {
-            <MudText Typo="Typo.body1">@result.a e @result.b não são primos entre si! MDC: @result.mdc</MudText>
+            <MudText Typo="Typo.h6">@result.a e @result.b não são primos entre si! MDC: @result.mdc</MudText>
         }
     }
 }
