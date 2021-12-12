@@ -39,13 +39,13 @@ else
 
     class Result
     {
-        public int x = -24102003;
-        public int y = -1;
-        public int mdc = -1;
-        public int a = -1;
-        public int b = -1;
+        public long x = -24102003;
+        public long y = -1;
+        public long mdc = -1;
+        public long a = -1;
+        public long b = -1;
 
-        public Result(int X, int Y, int MDC, int A, int B)
+        public Result(long X, long Y, long MDC, long A, long B)
         {
             x = X;
             y = Y;
@@ -63,9 +63,9 @@ else
         {
             Console.WriteLine($"Irei calcular: {Txt}");
             string[] spl = Txt.Split(",");
-            result.a = int.Parse(spl[0]);
-            result.b = int.Parse(spl[1]);
-            dynamic r = _principal.EuclidesExtendido(result.a, result.b, operacao:"linear");
+            result.a = long.Parse(spl[0]);
+            result.b = long.Parse(spl[1]);
+            dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao:"linear");
             result = new Result(r.x, r.y, r.mdc, r.a, r.b);
             InvokeAsync(StateHasChanged);
         }

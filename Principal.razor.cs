@@ -21,7 +21,7 @@ public interface IPrincipal
 
     public dynamic MDCEuclides(int a, int b);
 
-    public dynamic EuclidesExtendido(int a, int b, string operacao = "linear");
+    public dynamic EuclidesEstendido(long a, long b, string operacao = "linear");
 
     public void Limpeza(string contem);
 }
@@ -243,67 +243,46 @@ public class Principal : IPrincipal
         return obj;
     }
 
-    public dynamic EuclidesExtendido(int a, int b, string operacao="linear") //'linear' retornar x e y da combinação linear, 'inverso' retorna o inverso do mod
+    public dynamic EuclidesEstendido(long a, long b, string operacao="linear") //'linear' retornar x e y da combinação linear, 'inverso' retorna o inverso do mod
     {
-        int aux = a;
+        long aux = a;
         a = Math.Max(a, b);
         b = Math.Min(aux, b);
-        int mdc = -1;
 
         dynamic result = new {a=a,b=b,mdc=-1,x=-1,y=-1}; //objeto dinamico
 
-        bool TentarDividir(int a, int b)
-        {
-            if (b < mdc && b != 0 || mdc == -1) mdc = b;
-            Console.WriteLine($"Tentar dividir {a} / {b}");
-            if (b == 0) return false;
-            if ((float) a / (float) b > 1) return true;
-            else return false;
-        }
         
         dynamic linear()
         {
-            int q, r=-2410, t1=0, t2=1, t=-2410, aog=a,bog=b;
-            Stopwatch stop = new Stopwatch();
-            stop.Start();
-
-            //q = (int)Math.Floor((float)a / (float)b);
+            long x0=1, xn = 1;
+            long y0=0, yn = 0;
+            long x1 = 0;
+            long y1 = 1;
             
-            while (TentarDividir(a,b))
+            long a1 = a;
+            long b1 = b;
+            
+            long r = a1 % b1;
+            long q = -2410;
+
+
+            while (r > 0)
             {
-                
-                // //ordenar
-                // aux = a;
-                // a = Math.Max(a, b);
-                // b = Math.Min(aux, b);
-                
-                q = (int)Math.Floor((float)a / (float)b);
+                q = (long)Math.Floor((float)a1 / (float)b1);
+                xn = x0 - q * x1;
+                yn = y0 - q * y1;
 
-                ChecarTimeout(stop, 2000);
-                r = a % b;
-                t = t1 - (t2 * q);
-                
-                Console.WriteLine($"{q} {a} {b} {r} {t1} {t2} {t}");
-                if (b != 0)
-                {
-                    t1 = t2;
-                    t2 = t;
-                    
-                }
-                a = b;
-                b = r;
-                
+                x0 = x1;
+                y0 = y1;
+                x1 = xn;
+                y1 = yn;
+                a1 = b1;
+                b1 = r;
+                r = a1 % b1;
+
             }
-            // q = (int)Math.Floor((float)a / (float)b);
-            // t = t1 - (t2 * q);
-            //
-            // t1 = t2;
-            t2 = t;
             
-            Console.WriteLine($"X {a} {b} X {t1} {t2} X");
-
-
-            return new {a=aog,b=bog,x=t1,y=t2,mdc=mdc};
+            return new {a=a,b=b,x=xn,y=yn,mdc=b1};
 
         }
         
