@@ -26,7 +26,17 @@
 }
 else
 {
-    
+    @if (result.inverso.existe)
+    {
+        <MudText Typo="Typo.body1">O inverso de @result.a (mod @result.b) é @result.inverso.valor</MudText>
+    }
+    else
+    {
+        @if (result.mdc != 1 && result.x != -24102003)
+        {
+            <MudText Typo="Typo.body1">@result.a e @result.b não são primos entre si! MDC: @result.mdc</MudText>
+        }
+    }
 }
 
 @code{
@@ -44,14 +54,16 @@ else
         public long mdc = -1;
         public long a = -1;
         public long b = -1;
+        public dynamic inverso = new {valor=-1,existe=false};
 
-        public Result(long X, long Y, long MDC, long A, long B)
+        public Result(long X, long Y, long MDC, long A, long B, dynamic Inverso=null)
         {
             x = X;
             y = Y;
             mdc = MDC;
             a = A;
             b = B;
+            inverso = Inverso ?? new {valor=-1,existe=false};
         }
         
         public Result(){}
@@ -67,6 +79,16 @@ else
             result.b = long.Parse(spl[1]);
             dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao:"linear");
             result = new Result(r.x, r.y, r.mdc, r.a, r.b);
+            InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            string[] spl = Txt.Split(",");
+            result.a = long.Parse(spl[0]);
+            result.b = long.Parse(spl[1]);
+            dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao:"inverso");
+            result = new Result(r.x, r.y, r.mdc, r.a, r.b, Inverso:r.inverso);
+            Console.WriteLine($"y: {result.y} b:{result.b}");
             InvokeAsync(StateHasChanged);
         }
     }

@@ -245,9 +245,10 @@ public class Principal : IPrincipal
 
     public dynamic EuclidesEstendido(long a, long b, string operacao="linear") //'linear' retornar x e y da combinação linear, 'inverso' retorna o inverso do mod
     {
-        long aux = a;
-        a = Math.Max(a, b);
-        b = Math.Min(aux, b);
+        // long aux = a;
+        //
+        // a = Math.Max(a, b);
+        // b = Math.Min(aux, b);
 
         dynamic result = new {a=a,b=b,mdc=-1,x=-1,y=-1}; //objeto dinamico
 
@@ -259,8 +260,12 @@ public class Principal : IPrincipal
             long x1 = 0;
             long y1 = 1;
             
-            long a1 = a;
-            long b1 = b;
+            //long aux = a;
+
+            long a1 = Math.Max(a,b);
+            long b1 = Math.Min(b,a);
+            // long a1 = a;
+            // long b1 = b;
             
             long r = a1 % b1;
             long q = -2410;
@@ -271,6 +276,8 @@ public class Principal : IPrincipal
                 q = (long)Math.Floor((float)a1 / (float)b1);
                 xn = x0 - q * x1;
                 yn = y0 - q * y1;
+                
+                Console.WriteLine($"{xn} {x0} {x1}");
 
                 x0 = x1;
                 y0 = y1;
@@ -282,8 +289,19 @@ public class Principal : IPrincipal
 
             }
             
-            return new {a=a,b=b,x=xn,y=yn,mdc=b1};
+            return new {a=Math.Max(a,b),b=Math.Min(a,b),x=xn,y=yn,mdc=b1};
 
+        }
+
+        dynamic inverso()
+        {
+            dynamic _result = linear();
+            if (_result.mdc != 1){ //se não forem primos relativos
+                
+                return new {inverso=new {existe=false,valor=_result.b-_result.y},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
+            }
+            
+            return new {inverso=new {existe=true,valor=b-Math.Abs(_result.y)},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};;
         }
         
         switch (operacao.ToLower())
@@ -293,6 +311,7 @@ public class Principal : IPrincipal
                 break;
             
             case "inverso":
+                return inverso();
                 break;
             
         }
