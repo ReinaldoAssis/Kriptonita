@@ -1,0 +1,79 @@
+﻿@page "/ferramentas/euclides"
+
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">@(conta == "inverso" ? "Inverso modular" : "Combinação linear") utilizando euclides estendido</MudText>
+
+<MudItem Style="display: flex">
+    <div style="width: 300px; margin-right: 10px">
+        <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@Txt" Label="Números" Variant="Variant.Outlined"></MudTextField>
+    </div>
+    <div style="width: 170px; margin-right: 10px">
+        <MudSelect T="string" Label="Modo" @bind-Value="@conta">
+            <MudSelectItem T="string" Value="@("linear")">Combinação linear</MudSelectItem>
+            <MudSelectItem T="string" Value="@("inverso")">Inverso modular</MudSelectItem>
+        </MudSelect>
+    </div>
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Calcular</MudButton>
+</MudItem>
+
+@if (conta == "linear")
+{
+    @if (result.x != -24102003)
+    {
+        <MudText Typo="Typo.body1">@result.mdc = @result.x*@result.a @(result.y >= 0 ? "+" :"") @result.y*@result.b</MudText>
+    }
+}
+else
+{
+    
+}
+
+@code{
+
+    //string Titulo = "Combinação linear";
+    string Txt = "";
+    string conta = "linear";
+
+    Result result = new Result();
+
+    class Result
+    {
+        public int x = -24102003;
+        public int y = -1;
+        public int mdc = -1;
+        public int a = -1;
+        public int b = -1;
+
+        public Result(int X, int Y, int MDC, int A, int B)
+        {
+            x = X;
+            y = Y;
+            mdc = MDC;
+            a = A;
+            b = B;
+        }
+        
+        public Result(){}
+    }
+
+    void Gerar()
+    {
+        if (conta == "linear")
+        {
+            Console.WriteLine($"Irei calcular: {Txt}");
+            string[] spl = Txt.Split(",");
+            result.a = int.Parse(spl[0]);
+            result.b = int.Parse(spl[1]);
+            dynamic r = _principal.EuclidesExtendido(result.a, result.b, operacao:"linear");
+            result = new Result(r.x, r.y, r.mdc, r.a, r.b);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void TxtEnter(KeyboardEventArgs e)
+    {
+        if(e.Key.ToLower() == "enter") Gerar();
+    }
+    
+}

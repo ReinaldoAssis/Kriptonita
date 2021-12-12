@@ -21,6 +21,8 @@ public interface IPrincipal
 
     public dynamic MDCEuclides(int a, int b);
 
+    public dynamic EuclidesExtendido(int a, int b, string operacao = "linear");
+
     public void Limpeza(string contem);
 }
 
@@ -239,6 +241,85 @@ public class Principal : IPrincipal
         obj.result = aux;
         obj.restos = restos;
         return obj;
+    }
+
+    public dynamic EuclidesExtendido(int a, int b, string operacao="linear") //'linear' retornar x e y da combinação linear, 'inverso' retorna o inverso do mod
+    {
+        int aux = a;
+        a = Math.Max(a, b);
+        b = Math.Min(aux, b);
+        int mdc = -1;
+
+        dynamic result = new {a=a,b=b,mdc=-1,x=-1,y=-1}; //objeto dinamico
+
+        bool TentarDividir(int a, int b)
+        {
+            if (b < mdc && b != 0 || mdc == -1) mdc = b;
+            Console.WriteLine($"Tentar dividir {a} / {b}");
+            if (b == 0) return false;
+            if ((float) a / (float) b > 1) return true;
+            else return false;
+        }
+        
+        dynamic linear()
+        {
+            int q, r=-2410, t1=0, t2=1, t=-2410, aog=a,bog=b;
+            Stopwatch stop = new Stopwatch();
+            stop.Start();
+
+            //q = (int)Math.Floor((float)a / (float)b);
+            
+            while (TentarDividir(a,b))
+            {
+                
+                // //ordenar
+                // aux = a;
+                // a = Math.Max(a, b);
+                // b = Math.Min(aux, b);
+                
+                q = (int)Math.Floor((float)a / (float)b);
+
+                ChecarTimeout(stop, 2000);
+                r = a % b;
+                t = t1 - (t2 * q);
+                
+                Console.WriteLine($"{q} {a} {b} {r} {t1} {t2} {t}");
+                if (b != 0)
+                {
+                    t1 = t2;
+                    t2 = t;
+                    
+                }
+                a = b;
+                b = r;
+                
+            }
+            // q = (int)Math.Floor((float)a / (float)b);
+            // t = t1 - (t2 * q);
+            //
+            // t1 = t2;
+            t2 = t;
+            
+            Console.WriteLine($"X {a} {b} X {t1} {t2} X");
+
+
+            return new {a=aog,b=bog,x=t1,y=t2,mdc=mdc};
+
+        }
+        
+        switch (operacao.ToLower())
+        {
+            case "linear":
+                return linear();
+                break;
+            
+            case "inverso":
+                break;
+            
+        }
+
+        return result;
+
     }
 
     static void ChecarTimeout(Stopwatch relogio)
