@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Kriptonita.Pages.Subpaginas;
 
 public interface IPrincipal
 {
@@ -21,7 +22,7 @@ public interface IPrincipal
 
     public dynamic MDCEuclides(int a, int b);
 
-    public dynamic EuclidesEstendido(long a, long b, string operacao = "linear");
+    public dynamic EuclidesEstendido(long a, long b, string operacao = "linear", long congruencia=-1);
 
     public void Limpeza(string contem);
 }
@@ -207,7 +208,7 @@ public class Principal : IPrincipal
 
     }
 
-    public dynamic MDCEuclides(int a, int b)
+    public dynamic MDCEuclides(int a, int b) //TODO: mudar para long
     {
         Stopwatch relogio = new Stopwatch();
         relogio.Start();
@@ -215,7 +216,7 @@ public class Principal : IPrincipal
         int aux = a;
         a = Math.Max(a, b);
         b = Math.Min(aux, b);
-        Console.WriteLine($"max {a} min {b}");
+        //Console.WriteLine($"max {a} min {b}");
 
         List<int> restos = new List<int>();
 
@@ -231,19 +232,17 @@ public class Principal : IPrincipal
                 aux = b % aux;
                 restos.Add(aux);
                 b = aux2;
-                Console.WriteLine($"Resto {aux} Ultimo {b}");
+                //Console.WriteLine($"Resto {aux} Ultimo {b}");
             }
         }
 
         relogio.Stop();
 
-        dynamic obj = new ExpandoObject();
-        obj.result = aux;
-        obj.restos = restos;
+        dynamic obj = new {result=aux,restos=restos};
         return obj;
     }
 
-    public dynamic EuclidesEstendido(long a, long b, string operacao="linear") //'linear' retornar x e y da combinação linear, 'inverso' retorna o inverso do mod
+    public dynamic EuclidesEstendido(long a, long b, string operacao="linear", long congruencia=-1) //'linear' retornar x e y da combinação linear, 'inverso' retorna o inverso do mod
     {
         // long aux = a;
         //
@@ -253,7 +252,7 @@ public class Principal : IPrincipal
         dynamic result = new {a=a,b=b,mdc=-1,x=-1,y=-1}; //objeto dinamico
 
         
-        dynamic linear()
+        dynamic linear(long? novoA=null, long? novoB=null)
         {
             long x0=1, xn = 1;
             long y0=0, yn = 0;
@@ -262,11 +261,19 @@ public class Principal : IPrincipal
             
             //long aux = a;
 
-            long a1 = Math.Max(a,b);
-            long b1 = Math.Min(b,a);
-            // long a1 = a;
-            // long b1 = b;
-            
+            long a1;
+            long b1; 
+            if (novoA == null)
+            {
+                a1 = Math.Max(a, b);
+                b1 = Math.Min(b,a);
+            }
+            else
+            {
+                a1 = Math.Max(novoA??a, novoB??b);
+                b1 = Math.Min(novoA??a, novoB??b);
+            }
+
             long r = a1 % b1;
             long q = -2410;
 
@@ -293,9 +300,12 @@ public class Principal : IPrincipal
 
         }
 
-        dynamic inverso()
+        dynamic inverso(long? novoA=null, long? novoB=null)
         {
-            dynamic _result = linear();
+            dynamic _result;
+            if (novoA == null) _result = linear();
+            else _result = linear(novoA:novoA,novoB:novoB);
+            
             if (_result.mdc != 1){ //se não forem primos relativos
                 
                 return new {inverso=new {existe=false,valor=_result.b-_result.y},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
@@ -305,7 +315,46 @@ public class Principal : IPrincipal
             if (b == _result.b) _valor = (_result.x < 0 ? b + _result.x : _result.x);
             else _valor = (_result.y < 0 ? b + _result.y : _result.y);
             
-            return new {inverso=new {existe=true,valor=_valor},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};;
+            return new {inverso=new {existe=true,valor=_valor},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
+        }
+
+        //idealmente seria usado o teorema de euler para congruencias lineares, o cálculo seria imensamente mais eficaz
+        //mas ainda estou estudando o teorema e não saberia implementa-lo.
+        dynamic congruenciaLinear()
+        {
+            dynamic _result = inverso(); //primeiro achamos o inverso modular
+            Stopwatch stop = new Stopwatch();
+            stop.Start();
+            
+            //simplificar congruencia
+            long novoA = a;
+            long novoB = b;
+            long AMmdc = MDCEuclides((int) a, (int) b).result; //mdc entre a e modulo
+            while (novoA % _result.mdc == 0 && novoB%_result.mdc==0 && congruencia%_result.mdc==0 && _result.mdc != 1) //TODO: analisar se é necessário mudar para mdc de a e modulo
+            {
+                novoA /= _result.mdc;
+                novoB /= _result.mdc;
+                congruencia /= _result.mdc;
+                _result = inverso(novoA:novoA,novoB:novoB);
+                if(ChecarTimeout(stop, 3000)) throw new TimeoutException("Timeout na simplificacao da congruencia");
+            }
+
+            List<Eucldies.Result.Congruencia> retornos = new List<Eucldies.Result.Congruencia>();
+            if (congruencia%AMmdc == 0)
+            {
+                long xCongruencia = _result.inverso.valor*congruencia;
+                xCongruencia %= b; //mod b
+                for (int i = 0; i < AMmdc; i++)
+                {
+                    retornos.Add(new Eucldies.Result.Congruencia(congruencia*_result.mdc*AMmdc,xCongruencia+((i-1)*novoB),true,A:novoA+((i-1)*_result.mdc),B:novoB+((i-1)*_result.mdc)));
+                }
+                // retorno.congruencia = congruencia;
+                // retorno.xCongruencia = xCongruencia;
+                // retorno.existe = true; //se o mdc divide o b  //congruencia % _result.mdc == 0
+                return new {inverso=_result.inverso,a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc, congruencias=retornos};
+            }
+            return new {inverso=_result.inverso,a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc, congruencias=retornos};
+
         }
         
         switch (operacao.ToLower())
@@ -316,6 +365,10 @@ public class Principal : IPrincipal
             
             case "inverso":
                 return inverso();
+                break;
+            
+            case "congruencia":
+                return congruenciaLinear();
                 break;
             
         }
@@ -409,14 +462,6 @@ public class Principal : IPrincipal
         return file;
     }
 
-    //metodo para calcular congruencia linear, é extremamente ineficiente, porém é simples de implementar
-    //idealmente seria usado o teorema de euler para congruencias lineares, o cálculo seria imensamente mais eficaz
-    //mas ainda estou estudando o teorema e não saberia implementa-lo.
-    // public dynamic CongruenciaLinear()
-    // {
-    //     
-    // }
-    
     public static bool MillerRabinPrimo(BigInteger primo, int precisao)
             {
                 if(primo == 2 || primo == 3)

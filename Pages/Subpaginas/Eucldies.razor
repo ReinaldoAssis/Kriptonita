@@ -1,17 +1,19 @@
 ﻿@page "/ferramentas/euclides"
+@using System.ComponentModel
 
 @inject IPrincipal _principal
 
-<MudText Typo="Typo.h4">@(conta == "inverso" ? "Inverso modular" : "Combinação linear") utilizando euclides estendido</MudText>
+<MudText Typo="Typo.h4">@(conta == "inverso" ? "Inverso modular" : (conta == "linear" ? "Combinação linear" : "Congruência linear")) utilizando euclides estendido</MudText>
 
 <MudItem Style="display: flex">
     <div style="width: 300px; margin-right: 10px">
-        <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@Txt" Label="Números" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField Style="margin-right: 10px" T="string" @bind-Text="@Txt" DebounceInterval="300" OnDebounceIntervalElapsed="@Gerar" OnKeyUp="@TxtEnter" Label="Números" Variant="Variant.Outlined"></MudTextField>
     </div>
     <div style="width: 170px; margin-right: 10px">
         <MudSelect T="string" Label="Modo" @bind-Value="@conta">
             <MudSelectItem T="string" Value="@("linear")">Combinação linear</MudSelectItem>
             <MudSelectItem T="string" Value="@("inverso")">Inverso modular</MudSelectItem>
+            <MudSelectItem T="string" Value="@("congruencia")">Congruência linear</MudSelectItem>
         </MudSelect>
     </div>
     <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Calcular</MudButton>
@@ -24,7 +26,7 @@
         <MudText Typo="Typo.h6">@result.mdc = @result.x*@result.a @(result.y >= 0 ? "+" :"") @result.y*@result.b</MudText>
     }
 }
-else
+else if(conta == "inverso")
 {
     @if (result.inverso.existe)
     {
@@ -38,6 +40,25 @@ else
         }
     }
 }
+else
+{
+    //@if (result.inverso.existe)
+    //{
+    @foreach(var congruencia in result.congruencias)
+        if (congruencia.existe)
+        {
+            <MudText Typo="Typo.h6">@result.a*@congruencia.xCongruencia ≡ @congruencia.congruencia (mod @result.b)</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">Não existem soluções</MudText>
+        }
+    //}
+    //else
+    //{
+    //    <MudText Typo="Typo.h6">@result.a e @result.b não são primos entre si! MDC: @result.mdc</MudText>
+    //}
+}
 
 @code{
 
@@ -45,9 +66,11 @@ else
     string Txt = "";
     string conta = "linear";
 
+    bool changed = true;
+    
     Result result = new Result();
 
-    class Result
+    public class Result
     {
         public long x = -24102003;
         public long y = -1;
@@ -55,8 +78,27 @@ else
         public long a = -1;
         public long b = -1;
         public dynamic inverso = new {valor=-1,existe=false};
+        public List<Congruencia> congruencias = new List<Congruencia>();
 
-        public Result(long X, long Y, long MDC, long A, long B, dynamic Inverso=null)
+        public class Congruencia
+        {
+            public long congruencia = -1;
+            public long xCongruencia = -1;
+            public bool existe = false;
+            public long b = -1;
+            public long a = -1;
+
+            public Congruencia(long Con, long X, bool Existe, long? A=null, long? B=null)
+            {
+                xCongruencia = X;
+                congruencia = Con;
+                existe = Existe;
+                b = B ?? -1;
+                a = A ?? -1;
+            }
+        }
+        
+        public Result(long X, long Y, long MDC, long A, long B, dynamic Inverso=null, List<Congruencia> _Congs=null)
         {
             x = X;
             y = Y;
@@ -64,6 +106,7 @@ else
             a = A;
             b = B;
             inverso = Inverso ?? new {valor=-1,existe=false};
+            congruencias = _Congs ?? new List<Congruencia>();
         }
         
         public Result(){}
@@ -71,31 +114,70 @@ else
 
     void Gerar()
     {
-        if (conta == "linear")
+        if (changed)
         {
-            Console.WriteLine($"Irei calcular: {Txt}");
-            string[] spl = Txt.Split(",");
-            result.a = long.Parse(spl[0]);
-            result.b = long.Parse(spl[1]);
-            dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao:"linear");
-            result = new Result(r.x, r.y, r.mdc, r.a, r.b);
-            InvokeAsync(StateHasChanged);
-        }
-        else
-        {
-            string[] spl = Txt.Split(",");
-            result.a = long.Parse(spl[0]);
-            result.b = long.Parse(spl[1]);
-            dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao:"inverso");
-            result = new Result(r.x, r.y, r.mdc, r.a, r.b, Inverso:r.inverso);
-            Console.WriteLine($"y: {result.y} b:{result.b}");
-            InvokeAsync(StateHasChanged);
+            try
+            {
+                if (conta == "linear")
+                {
+    //Console.WriteLine($"Irei calcular: {Txt}");
+                    string[] spl = Txt.Split(",");
+                    result.a = long.Parse(spl[0]);
+                    result.b = long.Parse(spl[1]);
+                    dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao: "linear");
+                    result = new Result(r.x, r.y, r.mdc, r.a, r.b);
+                    InvokeAsync(StateHasChanged);
+
+                }
+                else if (conta == "inverso")
+                {
+                    string[] spl = Txt.Split(",");
+                    result.a = long.Parse(spl[0]);
+                    result.b = long.Parse(spl[1]);
+                    dynamic r = _principal.EuclidesEstendido(result.a, result.b, operacao: "inverso");
+                    result = new Result(r.x, r.y, r.mdc, r.a, r.b, Inverso: r.inverso);
+                    Console.WriteLine($"y: {result.y} b:{result.b}");
+                    InvokeAsync(StateHasChanged);
+                }
+                else
+                {
+                    string[] splSides = Txt.Split("≡");
+                    long a = long.Parse(splSides[0].Replace("x", ""));
+                    long b = long.Parse(splSides[1].Split("mod")[1]);
+                    long congruencia = long.Parse(splSides[1].Split("mod")[0]);
+
+                    dynamic conv = _principal.EuclidesEstendido(a, b, operacao: "congruencia", congruencia: congruencia);
+                    Result r = new Result(conv.x,conv.y,conv.mdc,conv.a,conv.b,Inverso:conv.inverso,_Congs:conv.congruencias);
+                    result = r;
+                    Console.WriteLine($"to loco meu ermao {result.congruencias.Count}");
+                    InvokeAsync(StateHasChanged);
+                }
+
+                changed = false;
+
+            }
+            catch(Exception e)
+            {
+                changed = false;
+                Console.WriteLine(e);
+                //throw new WarningException("Error ao tentar executar por handle bound");
+
+            }
+            
         }
     }
+    
 
-    void TxtEnter(KeyboardEventArgs e)
+    async void TxtEnter(KeyboardEventArgs e)
     {
-        if(e.Key.ToLower() == "enter") Gerar();
+        //if(e.Key.ToLower() == "enter") Gerar();
+        changed = true;
+        if (Txt.Contains("="))
+        {
+            Txt = Txt.Replace("=", "≡");
+            await InvokeAsync(StateHasChanged);
+        }
+        
     }
     
 }
