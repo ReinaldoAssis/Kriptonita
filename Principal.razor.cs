@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
@@ -223,11 +224,12 @@ public class Principal : IPrincipal
         aux = a % b;
         restos.Add(aux);
 
+        if (aux == 0) return  new {result=Math.Min(a, b),restos=new List<int>{Math.Min(a,b)}};
         if (aux != 0)
         {
             while (b % aux != 0)
             {
-                ChecarTimeout(relogio, 2000); //evita uma repetição infinita
+                if(ChecarTimeout(relogio, 2000)) throw new WarningException("loop timeout em MDC Eucldies"); //evita uma repetição infinita
                 int aux2 = aux;
                 aux = b % aux;
                 restos.Add(aux);
@@ -235,6 +237,7 @@ public class Principal : IPrincipal
                 //Console.WriteLine($"Resto {aux} Ultimo {b}");
             }
         }
+        
 
         relogio.Stop();
 
@@ -303,8 +306,13 @@ public class Principal : IPrincipal
         dynamic inverso(long? novoA=null, long? novoB=null)
         {
             dynamic _result;
-            if (novoA == null) _result = linear();
-            else _result = linear(novoA:novoA,novoB:novoB);
+            novoA = novoA ?? a;
+            novoB = novoB ?? b;
+            
+            _result = linear(novoA:novoA,novoB:novoB);
+            
+            if(novoB == 1) return new {inverso=new {existe=true,valor=0},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
+            if(novoA == 1) return new {inverso=new {existe=true,valor=1},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
             
             if (_result.mdc != 1){ //se não forem primos relativos
                 
@@ -330,23 +338,27 @@ public class Principal : IPrincipal
             long novoA = a;
             long novoB = b;
             long AMmdc = MDCEuclides((int) a, (int) b).result; //mdc entre a e modulo
-            while (novoA % _result.mdc == 0 && novoB%_result.mdc==0 && congruencia%_result.mdc==0 && _result.mdc != 1) //TODO: analisar se é necessário mudar para mdc de a e modulo
+
+            bool existe = congruencia % AMmdc == 0;
+            
+            while (novoA % AMmdc == 0 && novoB%AMmdc==0 && congruencia%AMmdc==0 && AMmdc != 1) //TODO: analisar se é necessário mudar para mdc de a e modulo
             {
-                novoA /= _result.mdc;
-                novoB /= _result.mdc;
-                congruencia /= _result.mdc;
+                novoA /= AMmdc;
+                novoB /= AMmdc;
+                congruencia /= AMmdc;
                 _result = inverso(novoA:novoA,novoB:novoB);
                 if(ChecarTimeout(stop, 3000)) throw new TimeoutException("Timeout na simplificacao da congruencia");
             }
 
             List<Eucldies.Result.Congruencia> retornos = new List<Eucldies.Result.Congruencia>();
-            if (congruencia%AMmdc == 0)
+            if (existe) //mudar de posição para antes da simplificação!
             {
                 long xCongruencia = _result.inverso.valor*congruencia;
-                xCongruencia %= b; //mod b
+                //xCongruencia %= b; //mod b
+                Console.WriteLine($"A {novoA} B {congruencia} mod {novoB} xC {xCongruencia} inverso {_result.inverso.valor}");
                 for (int i = 0; i < AMmdc; i++)
                 {
-                    retornos.Add(new Eucldies.Result.Congruencia(congruencia*_result.mdc*AMmdc,xCongruencia+((i-1)*novoB),true,A:novoA+((i-1)*_result.mdc),B:novoB+((i-1)*_result.mdc)));
+                    retornos.Add(new Eucldies.Result.Congruencia(congruencia*_result.mdc*AMmdc,xCongruencia+((i)*novoB),true,A:novoA+((i-1)*_result.mdc),B:novoB+((i-1)*_result.mdc)));
                 }
                 // retorno.congruencia = congruencia;
                 // retorno.xCongruencia = xCongruencia;

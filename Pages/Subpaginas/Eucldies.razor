@@ -7,16 +7,16 @@
 
 <MudItem Style="display: flex">
     <div style="width: 300px; margin-right: 10px">
-        <MudTextField Style="margin-right: 10px" T="string" @bind-Text="@Txt" DebounceInterval="300" OnDebounceIntervalElapsed="@Gerar" OnKeyUp="@TxtEnter" Label="Números" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField Style="margin-right: 10px" T="string" @bind-Text="@Txt" DebounceInterval="300" OnDebounceIntervalElapsed="@(() => Gerar())" OnKeyUp="@TxtEnter" Label="Números" Variant="Variant.Outlined"></MudTextField>
     </div>
     <div style="width: 170px; margin-right: 10px">
-        <MudSelect T="string" Label="Modo" @bind-Value="@conta">
+        <MudSelect T="string" Label="Modo" @bind-Value="@conta" OnKeyUp="@(() => Gerar(true))">
             <MudSelectItem T="string" Value="@("linear")">Combinação linear</MudSelectItem>
             <MudSelectItem T="string" Value="@("inverso")">Inverso modular</MudSelectItem>
             <MudSelectItem T="string" Value="@("congruencia")">Congruência linear</MudSelectItem>
         </MudSelect>
     </div>
-    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Calcular</MudButton>
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@(() => Gerar(true))">Calcular</MudButton>
 </MudItem>
 
 @if (conta == "linear")
@@ -53,6 +53,11 @@ else
         {
             <MudText Typo="Typo.h6">Não existem soluções</MudText>
         }
+    
+    @if (result.congruencias.Count == 0)
+    {
+        <MudText Typo="Typo.h6">Não existem soluções</MudText>
+    }
     //}
     //else
     //{
@@ -112,8 +117,9 @@ else
         public Result(){}
     }
 
-    void Gerar()
+    void Gerar(bool? force=null)
     {
+        changed = force ?? changed;
         if (changed)
         {
             try
