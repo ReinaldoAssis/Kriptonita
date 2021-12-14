@@ -34,6 +34,7 @@ else
     string conta = "mdc";
     string listastr = "";
     private bool changed = false;
+    private bool debug = true;
     
     BigInteger result = new BigInteger(0);
 
@@ -94,9 +95,10 @@ else
                 
                 changed = false;
             }
-            catch
+            catch(Exception e)
             {
                 changed = false;
+                if(debug) Console.WriteLine(e);
             }
         }
     }

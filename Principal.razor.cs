@@ -85,6 +85,9 @@ public class Principal : IPrincipal
         BigInteger resto = numero;
         Stopwatch relogio = new Stopwatch();
         relogio.Start();
+        
+        Debug($"fatorando numero {numero}", "Fatorar em primos");
+        
         while (resto != 1)
         {
             ChecarTimeout(relogio);
@@ -101,10 +104,10 @@ public class Principal : IPrincipal
                 while (resto % n != 0)
                 {
                     n += 2;
-                    ChecarTimeout(relogio);
+                    ChecarTimeout(relogio, maxtime:15000);
                     bool ehprimo = MillerRabinPrimo(n, 20);
                     while (!ehprimo){
-                        ChecarTimeout(relogio);
+                        ChecarTimeout(relogio, maxtime:15000);
                         //Console.WriteLine($"resto: {resto} | n: {n}");
                         n += 2; //enquanto não for primo, incrementar de 2 em 2 - evita testar números pares
                         ehprimo = MillerRabinPrimo(n, 20);
@@ -120,6 +123,9 @@ public class Principal : IPrincipal
             //Console.WriteLine(resto);
             
         }
+        
+        Debug($"primeiro fator: {fatores.First()}", "Fatorar em primos");
+
 
         return fatores;
     }
@@ -389,9 +395,9 @@ public class Principal : IPrincipal
 
     }
 
-    static void ChecarTimeout(Stopwatch relogio)
+    static void ChecarTimeout(Stopwatch relogio, int? maxtime=null)
     {
-        if (relogio.ElapsedMilliseconds > 3000) throw new TimeoutException("Error ao fatorar primos, timeout."); //se está dentro do loop a mais de 1 minuto, quebrar.
+        if (relogio.ElapsedMilliseconds > (maxtime ?? 3000)) throw new TimeoutException("Error ao fatorar primos, timeout."); //se está dentro do loop a mais de 1 minuto, quebrar.
     }
     
     static bool ChecarTimeout(Stopwatch relogio, int mili)
@@ -531,5 +537,15 @@ public class Principal : IPrincipal
         string pt = Path.GetTempPath();
         var files = Directory.GetFiles(pt, "*.kriptonita").Where(x => x.ToLower().Contains(contem));
         foreach (var f in files) if(File.Exists(f)) File.Delete(f);
+    }
+
+    public const bool debug = true;
+    public void Debug(object message, string? reference=null)
+    {
+        if (debug)
+        {
+            Console.Write(message);
+            Console.WriteLine($" | referencia: {reference ?? "null"}");
+        }
     }
 }
