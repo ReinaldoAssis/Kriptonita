@@ -13,7 +13,7 @@ else
 
 <MudItem Style="display: flex; padding-top: 15px">
     <MudTooltip Text="Separados por ','">
-        <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@txt" Label="Números" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@txt" OnKeyDown="@(() => changed = true)" DebounceInterval="100" OnDebounceIntervalElapsed="@(() => Calcular())" Label="Números" Variant="Variant.Outlined"></MudTextField>
     </MudTooltip>
     <div style="width: 100px; margin-right: 10px">
         <MudSelect T="string" Label="Conta"  @bind-Value="@conta">
@@ -22,7 +22,7 @@ else
             <MudSelectItem T="string" Value="@("euclides")">MDC Euclides</MudSelectItem>
         </MudSelect>
     </div>
-    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Medium" OnClick="@Calcular">Calcular</MudButton> 
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Medium" OnClick="@(() => Calcular(true))">Calcular</MudButton> 
 </MudItem>
     <MudText Typo="Typo.h5" Style="margin-top:10px">Resultado: @result</MudText>
 
@@ -33,58 +33,71 @@ else
     string txt = "";
     string conta = "mdc";
     string listastr = "";
+    private bool changed = false;
     
     BigInteger result = new BigInteger(0);
 
-    async void Calcular()
+    async void Calcular(bool force=false)
     {
-        listastr = "";
-        List<BigInteger> ns = txt.Split(',').Select(x => BigInteger.Parse(x)).ToList();
-        if (conta == "mdc")
+        if (changed || force)
         {
-            dynamic obj = _principal.MDC(ns).Result;
-            result = obj.result;
-            int i = 0;
-            foreach (var lista in obj.listas)
+            try
             {
-                listastr += $"{ns[i]}: ";
-                foreach (var fator in lista)
+                listastr = "";
+                List<BigInteger> ns = txt.Split(',').Select(x => BigInteger.Parse(x)).ToList();
+                if (conta == "mdc")
                 {
-                    string pot = fator.Value != 1 ? $"^{fator.Value} ● " : " ● ";
-                    listastr += $"{fator.Key}{pot}";
+                    dynamic obj = _principal.MDC(ns).Result;
+                    result = obj.result;
+                    int i = 0;
+                    foreach (var lista in obj.listas)
+                    {
+                        listastr += $"{ns[i]}: ";
+                        foreach (var fator in lista)
+                        {
+                            string pot = fator.Value != 1 ? $"^{fator.Value} * " : " * ";
+                            listastr += $"{fator.Key}{pot}";
+                        }
+                        listastr = listastr.Remove(listastr.LastIndexOf('*'), 2)+".";
+                        i++;
+                        listastr += "\n";
+                    }
                 }
-                listastr = listastr.Remove(listastr.LastIndexOf('●'), 2)+".";
-                i++;
-                listastr += "\n";
-            }
-        }
-        else if(conta == "mmc")
-        {
-            dynamic obj = _principal.MMC(ns).Result;
-            result = obj.result;
-            int i = 0;
-            foreach (var lista in obj.listas)
-            {
-                listastr += $"{ns[i]}: ";
-                foreach (var fator in lista)
+                else if(conta == "mmc")
                 {
-                    string pot = fator.Value != 1 ? $"^{fator.Value} ● " : " ● ";
-                    listastr += $"{fator.Key}{pot}";
+                    dynamic obj = _principal.MMC(ns).Result;
+                    result = obj.result;
+                    int i = 0;
+                    foreach (var lista in obj.listas)
+                    {
+                        listastr += $"{ns[i]}: ";
+                        foreach (var fator in lista)
+                        {
+                            string pot = fator.Value != 1 ? $"^{fator.Value} * " : " * ";
+                            listastr += $"{fator.Key}{pot}";
+                        }
+                        listastr = listastr.Remove(listastr.LastIndexOf('*'), 2)+".";
+                        i++;
+                        listastr += "\n";
+                    }
                 }
-                listastr = listastr.Remove(listastr.LastIndexOf('●'), 2)+".";
-                i++;
-                listastr += "\n";
+                else
+                {
+                    dynamic obj = _principal.MDCEuclides((int) ns[0], (int) ns[1]);
+                    result = obj.result;
+                    foreach (var resto in obj.restos)
+                    {
+                        listastr += $"{resto}, ";
+                    }
+                   // listastr = listastr.Remove(listastr.LastIndexOf(','), 1)+".";
+                }
+                
+                changed = false;
             }
-        }
-        else
-        {
-            dynamic obj = _principal.MDCEuclides((int) ns[0], (int) ns[1]);
-            result = obj.result;
-            foreach (var resto in obj.restos)
+            catch
             {
-                listastr += $"{resto}, ";
+                changed = false;
             }
-           // listastr = listastr.Remove(listastr.LastIndexOf(','), 1)+".";
         }
     }
     

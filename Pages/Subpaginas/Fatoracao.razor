@@ -6,29 +6,43 @@
 <MudText Typo="Typo.h4">Fatorar em números primos</MudText>
 
 <MudItem Style="display: flex">
-    <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@numero" Label="Número" Variant="Variant.Outlined"></MudTextField>
-    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Começar!</MudButton>
+    <MudTextField Style="margin-right: 10px" T="string" @bind-Value="@numero" OnKeyDown="@(() => changed = true)" DebounceInterval="100" OnDebounceIntervalElapsed="@(() => Gerar())" Label="Número" Variant="Variant.Outlined"></MudTextField>
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@(() => Gerar(true))">Começar!</MudButton>
 </MudItem>
 
-<MudTextField Lines="20" @bind-Value="@listastr" T="string" Placeholder="Os fatores aparecerão aqui."></MudTextField>
+@* <MudTextField Lines="20" @bind-Value="@listastr" T="string" Placeholder="Os fatores aparecerão aqui."></MudTextField> *@
+<MudText Style="margin-top: 10px" Typo="Typo.h6">@(listastr == "" ? "Os fatores aparecerão aqui." : listastr)</MudText>
 
 @code{
 
     string listastr = "";
     string numero = "";
+    private bool changed = false;
+    
     Dictionary<string, int> dic = new Dictionary<string, int>();
 
-    async void Gerar()
+    async void Gerar(bool force=false)
     {
-        listastr = "";
-        dic = await _principal.FatorarEmPrimos(BigInteger.Parse(numero));
-        foreach (var fator in dic)
+        if (changed || force)
         {
-            string pot = fator.Value != 1 ? $"^{fator.Value} ● " : " ● ";
-            listastr += $"{fator.Key}{pot}";
+            try
+            {
+                listastr = "";
+                dic = await _principal.FatorarEmPrimos(BigInteger.Parse(numero));
+                foreach (var fator in dic)
+                {
+                    string pot = fator.Value != 1 ? $"^{fator.Value} * " : " * ";
+                    listastr += $"{fator.Key}{pot}";
+                }
+                listastr = listastr.Remove(listastr.LastIndexOf('*'), 2)+".";
+                await InvokeAsync(StateHasChanged);
+                changed = false;
+            }
+            catch
+            {
+                changed = false;
+            }
         }
-        listastr = listastr.Remove(listastr.LastIndexOf('●'), 2)+".";
-        await InvokeAsync(StateHasChanged);
     }
     
 }
