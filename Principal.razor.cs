@@ -312,8 +312,10 @@ public class Principal : IPrincipal
         dynamic inverso(long? novoA=null, long? novoB=null)
         {
             dynamic _result;
-            novoA = novoA ?? a;
-            novoB = novoB ?? b;
+            novoA ??= a;
+            novoB ??= b;
+            
+            Console.WriteLine($"inverso a {novoA} b {novoB}");
             
             _result = linear(novoA:novoA,novoB:novoB);
             
@@ -326,8 +328,8 @@ public class Principal : IPrincipal
             }
 
             long _valor = 0;
-            if (b == _result.b) _valor = (_result.x < 0 ? b + _result.x : _result.x);
-            else _valor = (_result.y < 0 ? b + _result.y : _result.y);
+            if (novoB == _result.b) _valor = (_result.x < 0 ? novoB + _result.x : _result.x);
+            else _valor = (_result.y < 0 ? novoB + _result.y : _result.y);
             
             return new {inverso=new {existe=true,valor=_valor},a=a,b=b,x=_result.x,y=_result.y,mdc=_result.mdc};
         }
@@ -353,14 +355,15 @@ public class Principal : IPrincipal
                 novoB /= AMmdc;
                 congruencia /= AMmdc;
                 _result = inverso(novoA:novoA,novoB:novoB);
+                Console.WriteLine($"{novoA} mod {novoB} = {_result.inverso.valor}");
                 if(ChecarTimeout(stop, 3000)) throw new TimeoutException("Timeout na simplificacao da congruencia");
             }
-
+            
             List<Eucldies.Result.Congruencia> retornos = new List<Eucldies.Result.Congruencia>();
             if (existe) //mudar de posição para antes da simplificação!
             {
                 long xCongruencia = _result.inverso.valor*congruencia;
-                //xCongruencia %= b; //mod b
+                xCongruencia %= novoB; //mod b
                 Console.WriteLine($"A {novoA} B {congruencia} mod {novoB} xC {xCongruencia} inverso {_result.inverso.valor}");
                 for (int i = 0; i < AMmdc; i++)
                 {
