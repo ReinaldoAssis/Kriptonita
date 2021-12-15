@@ -14,7 +14,7 @@ using Kriptonita.Pages.Subpaginas;
 public interface IPrincipal
 {
     public Task<bool> DeterminarSeEprimo(BigInteger primo);
-    public Task<string> GerarPrimosSequenciais(int timespan=3, bool paralelo=true, long limit=10000000);
+    public Task<string> GerarPrimosSequenciais(int timespan=3, bool paralelo=false, long limit=10000000);
 
     public Task<Dictionary<string,int>> FatorarEmPrimos(BigInteger numero);
 
@@ -24,6 +24,8 @@ public interface IPrincipal
     public dynamic MDCEuclides(int a, int b);
 
     public dynamic EuclidesEstendido(long a, long b, string operacao = "linear", long congruencia=-1);
+
+    public long RestoChines(List<string> equacoes);
 
     public void Limpeza(string contem);
 }
@@ -40,8 +42,8 @@ public class Principal : IPrincipal
         if (primo < 2) return false; //números negativos, 1 ou 0 não são primos
 
 
-        //não tenho certeza se async é realmente necessário aqui
-        //mas já que estamos lidando com processamentos gigantescos, é melhor prevenir
+        //utilizei metodos async para funções cujo processamento é demorado, são mais dificeis de implementar
+        //e manter, porém evitam o congelamento do programa
         return await Task.Run(() => MillerRabinPrimo(primo, 10)); 
     }
 
@@ -398,6 +400,56 @@ public class Principal : IPrincipal
 
     }
 
+    public long RestoChines(List<string> equacoes)
+    {
+        long total = 0; //o X que queremos encontrar
+        
+        Console.WriteLine("entrei");
+        
+        List<dynamic> valores = new List<dynamic>(); //lista das congruências lineares
+
+        foreach (var eq in equacoes)
+        {
+            string[] xside = eq.Contains("=") ? eq.Split("=") : eq.Split("≡");
+            string[] sides = xside[1].Split("mod");
+            long mod = long.Parse(sides[1]); //pega o mod
+            long b = long.Parse(sides[0]); //pega o b
+            long a = long.Parse(xside[0].Replace("x", ""));
+
+            long mdc = MDCEuclides((int)a, (int)mod).result; //TODO: MUDAR PARA LONG!!
+
+            while (a % mdc == 0 && mod % mdc == 0 && b % mdc == 0 && mdc != 1) //simplifica a congruência
+            {
+                a /= mdc;
+                mod /= mdc;
+                b /= mdc;
+            }
+            
+            Console.WriteLine($"a {a} b {b} mod {mod}");
+
+            valores.Add(new {b=b,mod=mod});
+            
+            
+        }
+
+        long N = 1;
+        valores.ForEach((x) => N *= (long)x.mod); //calcula o N total
+
+        foreach (var eq in valores)
+        {
+            long n = N / eq.mod;
+            long x = EuclidesEstendido(n, eq.mod,"inverso").inverso.valor;
+            Console.WriteLine($"b {eq.b} mod {eq.mod} n {n} x {x} N {N}");
+            // valores.Remove(eq);
+            // valores.Add(new {b=eq.b,mod=eq.mod,x=x,n=n});
+            total += n * x * (long)eq.b;
+        }
+
+        total %= N;
+        
+        return total;
+    }
+
     static void ChecarTimeout(Stopwatch relogio, int? maxtime=null)
     {
         if (relogio.ElapsedMilliseconds > (maxtime ?? 3000)) throw new TimeoutException("Error ao fatorar primos, timeout."); //se está dentro do loop a mais de 1 minuto, quebrar.
@@ -436,7 +488,7 @@ public class Principal : IPrincipal
             }
         }
 
-        bool ChecarESalvar(List<int> lista)
+        bool ChecarESalvar(List<int> lista) //salva primos no arquivo e limpa da memoria RAM
         {
             if (lista.Count > 100000)
             {

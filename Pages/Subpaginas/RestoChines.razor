@@ -1,0 +1,49 @@
+﻿@page "/ferramentas/chines"
+
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Resolver sistemas com teorema chinês do resto</MudText>
+
+<MudTextField @bind-Text="@Txt" Immediate="true" T="string" Style="font-size: 22px" Lines="10" Label="Congruências" OnDebounceIntervalElapsed="@(()=>Calcular())" DebounceInterval="100" OnKeyDown="@TxtEnter"></MudTextField>
+
+<MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@(()=>Calcular(true))">Calcular</MudButton>
+
+@if (result != null)
+{
+    <MudText Typo="Typo.h6">X é @result</MudText>
+}
+
+@code{
+
+    private bool changed = false;
+    string Txt = "";
+    long? result = null;
+
+    void Calcular(bool force=false)
+    {
+        if (changed || force)
+        {
+            try
+            {
+                if (Txt.Split(",").Length >= 2 || Txt.Split("\n").Length >= 2)
+                {
+                    string[] param = Txt.Contains(",") ? Txt.Split(",") : Txt.Split("\n");
+                    result = _principal.RestoChines(param.ToList());
+                }
+            }catch(Exception e){Console.WriteLine(e);}
+            changed = false;
+        }
+    }
+    
+    async void TxtEnter(KeyboardEventArgs e)
+    {
+        changed = true;
+        if (Txt.Contains("="))
+        {
+            Txt = Txt.Replace("=", "≡");
+            await InvokeAsync(StateHasChanged);
+        }
+        
+    }
+
+}

@@ -6,6 +6,9 @@ Projeto de matemática discreta visando o apredizado - na prática - das aplica�
 
 ## Screenshots
 
+![Home](/zsrc/ferramentas.jpg?raw=true "Home")
+![Congruência Linear](/zsrc/euclides.jpg?raw=true "Congruência Linear")
+
 ## NOTE
 
 Projeto desenvolvido por Reinaldo M. Assis - UFAL. Sinta-se livre para clonar e analizar o projeto você mesmo.
