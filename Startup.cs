@@ -40,7 +40,7 @@ namespace Kriptonita
         
         private async void CreateWindow()  
         {  
-            var window = await Electron.WindowManager.CreateWindowAsync(new BrowserWindowOptions(){AutoHideMenuBar = true});  
+            var window = await Electron.WindowManager.CreateWindowAsync(new BrowserWindowOptions(){AutoHideMenuBar = true, Icon = "./wwwroot/favicon.ico"});  
             window.OnClosed += () => {  
                 Electron.App.Quit();  
             };  

@@ -13,6 +13,9 @@
     "copyright": "Copyright © 2021",
     "buildVersion": "1.0.0",
     "compression": "maximum",
+    "win": {
+      "icon": "./wwwroot/favicon.ico"
+    },
     "directories": {
       "output": "../../../bin/Desktop"
     },
