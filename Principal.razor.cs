@@ -21,13 +21,15 @@ public interface IPrincipal
     public Task<dynamic> MDC(List<BigInteger> ns); 
     public Task<dynamic> MMC(List<BigInteger> ns);
 
-    public dynamic MDCEuclides(int a, int b);
+    public dynamic MDCEuclides(BigInteger a, BigInteger b);
 
     public dynamic EuclidesEstendido(long a, long b, string operacao = "linear", long congruencia=-1);
 
     public long RestoChines(List<string> equacoes);
 
     public void Limpeza(string contem);
+
+    public BigInteger GerarNumeroPrimo();
 }
 
 public class Principal : IPrincipal
@@ -217,28 +219,28 @@ public class Principal : IPrincipal
 
     }
 
-    public dynamic MDCEuclides(int a, int b) //TODO: mudar para long
+    public dynamic MDCEuclides(BigInteger a, BigInteger b)
     {
         Stopwatch relogio = new Stopwatch();
         relogio.Start();
 
-        int aux = a;
-        a = Math.Max(a, b);
-        b = Math.Min(aux, b);
+        BigInteger aux = a;
+        a = BigInteger.Max(a, b);
+        b = BigInteger.Min(aux, b);
         //Console.WriteLine($"max {a} min {b}");
 
-        List<int> restos = new List<int>();
+        List<BigInteger> restos = new List<BigInteger>();
 
         aux = a % b;
         restos.Add(aux);
 
-        if (aux == 0) return  new {result=Math.Min(a, b),restos=new List<int>{Math.Min(a,b)}};
+        if (aux == 0) return  new {result=BigInteger.Min(a, b),restos=new List<BigInteger>{BigInteger.Min(a,b)}};
         if (aux != 0)
         {
             while (b % aux != 0)
             {
                 if(ChecarTimeout(relogio, 2000)) throw new WarningException("loop timeout em MDC Eucldies"); //evita uma repetição infinita
-                int aux2 = aux;
+                BigInteger aux2 = aux;
                 aux = b % aux;
                 restos.Add(aux);
                 b = aux2;
@@ -602,5 +604,27 @@ public class Principal : IPrincipal
             Console.Write(message);
             Console.WriteLine($" | referencia: {reference ?? "null"}");
         }
+    }
+
+    public BigInteger GerarNumeroPrimo()
+    {
+        Stopwatch relogio = new Stopwatch();
+        BigInteger n = new BigInteger();
+        
+        relogio.Start();
+
+        while (true)
+        {
+            if (ChecarTimeout(relogio, 2000)) return -1;
+            var rng = new RNGCryptoServiceProvider();
+            byte[] buffer = new byte[12];
+            rng.GetBytes(buffer);
+            n = new BigInteger(buffer); //numero aleatorio
+            if (MillerRabinPrimo(n, 25))
+            {
+                return n;
+            }
+        }
+
     }
 }

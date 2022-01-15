@@ -1,0 +1,113 @@
+﻿@page "/projeto/chavepublica"
+@using System.Numerics
+@using System.Diagnostics
+
+@inject ISnackbar Snackbar
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Gerar chave pública</MudText>
+
+<MudItem Style="display: flex">
+
+    <div style="width: 100px; margin-right: 10px">
+        <MudTextField T="BigInteger" @bind-Value="@p" Converter="converter" Immediate="true" Label="Primo 1" DebounceInterval="200" OnDebounceIntervalElapsed="@pChange" Variant="Variant.Outlined"></MudTextField>
+    </div>
+    <div style="width: 100px; margin-right: 10px">
+        <MudTextField T="BigInteger" @bind-Value="@q" Converter="converter" Immediate="true" Label="Primo 2" DebounceInterval="200" OnDebounceIntervalElapsed="@qChange" Variant="Variant.Outlined"></MudTextField>
+    </div>
+    <div style="width: 100px; margin-right: 10px">
+        <MudTextField T="BigInteger" @bind-Value="@e" Converter="converter" Immediate="true" DebounceInterval="200" OnDebounceIntervalElapsed="@eChange" Label="Expoente" Variant="Variant.Outlined"></MudTextField>
+    </div>
+
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@(() => Gerar(true))">Gerar</MudButton>
+
+</MudItem>
+@if (chave.n != -1)
+{
+    <MudText Typo="Typo.h5">N @chave.n, E @chave.e</MudText>
+}
+
+@code{
+
+    BigInteger p = new BigInteger(-1);
+    BigInteger q = new BigInteger(-1); 
+    BigInteger e = new BigInteger(-1); //expoente
+
+    BigInteger last_p = new BigInteger();
+    BigInteger last_q = new BigInteger();
+    BigInteger last_e = new BigInteger();
+    
+    dynamic chave = new {n = -1, e = -1};
+
+    async void Gerar(bool over)
+    {
+        if (p == -1 || p == 0 || p == last_p) p = _principal.GerarNumeroPrimo();
+        if (q == -1 || q == 0 || q == last_q) q = _principal.GerarNumeroPrimo();
+        
+        if (await _principal.DeterminarSeEprimo(p) && await _principal.DeterminarSeEprimo(q))
+        {
+            if (e == -1 || e == 0 || e == last_e) e = await RelativamentePrimo();
+            await InvokeAsync(StateHasChanged);
+            if (await ChecarExpoente())
+            {
+                chave = new {n = p * q, e = e};
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                if(Snackbar.ShownSnackbars.Count() < 2) ExpoenteInvalido();
+            }
+            
+        }
+        else
+        {
+            if(Snackbar.ShownSnackbars.Count() < 2) PrimosInvalidos();
+        }
+
+        last_e = e;
+        last_p = p;
+        last_q = q;
+
+    }
+
+    async Task<int> RelativamentePrimo()
+    {
+        Stopwatch relogio = new Stopwatch();
+        relogio.Start();
+        int x = -1;
+        Random rd = new Random();
+        
+        BigInteger num = (p - 1) * (q - 1);
+
+        while (true)
+        {
+            if (relogio.Elapsed.Seconds == 2) return -1; //timeout
+            x = rd.Next(10000)*2+1;
+            //dynamic r = _principal.MDCEuclides(x,_principal.MDCEuclides(a,b).result);
+            if (BigInteger.GreatestCommonDivisor(x, num) == 1) return x;
+        }
+    }
+
+    async Task<bool> ChecarExpoente()
+    {
+        BigInteger x = (p - 1) * (q - 1);
+        //dynamic r = await _principal.MDC(new List<BigInteger>(){x,e});
+        return BigInteger.GreatestCommonDivisor(x,e) == new BigInteger(1);
+    }
+
+    void pChange(string txt) => BigInteger.TryParse(txt, out p);
+    void qChange(string txt) => BigInteger.TryParse(txt, out q);
+    void eChange(string txt) => BigInteger.TryParse(txt, out e);
+
+    void ExpoenteInvalido() => Snackbar.Add("Expoente não é coprimo!", Severity.Error);
+    
+    void PrimosInvalidos() => Snackbar.Add("O valor não é primo!", Severity.Error);
+    
+    Converter<BigInteger> converter = new Converter<BigInteger>
+    {
+        SetFunc = value => value.ToString(),
+        GetFunc = text => BigInteger.Parse(text),
+    };
+    
+
+}
