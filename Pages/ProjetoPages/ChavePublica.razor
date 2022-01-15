@@ -1,6 +1,8 @@
 ﻿@page "/projeto/chavepublica"
 @using System.Numerics
 @using System.Diagnostics
+@using System.IO
+@using ElectronNET.API
 
 @inject ISnackbar Snackbar
 @inject IPrincipal _principal
@@ -10,13 +12,13 @@
 <MudItem Style="display: flex">
 
     <div style="width: 100px; margin-right: 10px">
-        <MudTextField T="BigInteger" @bind-Value="@p" Converter="converter" Immediate="true" Label="Primo 1" DebounceInterval="200" OnDebounceIntervalElapsed="@pChange" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField T="BigInteger" @bind-Value="@p" Converter="converter" Immediate="true" Label="Primo 1"  Variant="Variant.Outlined"></MudTextField>
     </div>
     <div style="width: 100px; margin-right: 10px">
-        <MudTextField T="BigInteger" @bind-Value="@q" Converter="converter" Immediate="true" Label="Primo 2" DebounceInterval="200" OnDebounceIntervalElapsed="@qChange" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField T="BigInteger" @bind-Value="@q" Converter="converter" Immediate="true" Label="Primo 2" Variant="Variant.Outlined"></MudTextField>
     </div>
     <div style="width: 100px; margin-right: 10px">
-        <MudTextField T="BigInteger" @bind-Value="@e" Converter="converter" Immediate="true" DebounceInterval="200" OnDebounceIntervalElapsed="@eChange" Label="Expoente" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField T="BigInteger" @bind-Value="@e" Converter="converter" Immediate="true" Label="Expoente" Variant="Variant.Outlined"></MudTextField>
     </div>
 
     <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@(() => Gerar(true))">Gerar</MudButton>
@@ -24,7 +26,8 @@
 </MudItem>
 @if (chave.n != -1)
 {
-    <MudText Typo="Typo.h5">N @chave.n, E @chave.e</MudText>
+    <MudText Typo="Typo.h5">N = @chave.n</MudText>
+    <MudText Typo="Typo.h5">E = @chave.e</MudText>
 }
 
 @code{
@@ -32,6 +35,7 @@
     BigInteger p = new BigInteger(-1);
     BigInteger q = new BigInteger(-1); 
     BigInteger e = new BigInteger(-1); //expoente
+    BigInteger n = new BigInteger();
 
     BigInteger last_p = new BigInteger();
     BigInteger last_q = new BigInteger();
@@ -51,6 +55,7 @@
             if (await ChecarExpoente())
             {
                 chave = new {n = p * q, e = e};
+                Salvar();
                 await InvokeAsync(StateHasChanged);
             }
             else
@@ -78,6 +83,7 @@
         Random rd = new Random();
         
         BigInteger num = (p - 1) * (q - 1);
+        n = num;
 
         while (true)
         {
@@ -95,9 +101,12 @@
         return BigInteger.GreatestCommonDivisor(x,e) == new BigInteger(1);
     }
 
-    void pChange(string txt) => BigInteger.TryParse(txt, out p);
-    void qChange(string txt) => BigInteger.TryParse(txt, out q);
-    void eChange(string txt) => BigInteger.TryParse(txt, out e);
+    async void Salvar()
+    {
+        string path = await Electron.App.GetAppPathAsync();
+        Console.WriteLine("PATH ->"+Path.Join(path,"/chavepublica.txt"));
+        await File.WriteAllTextAsync(Path.Join(path,"/chavepublica.txt"),$"{n}\n{e}");
+    }
 
     void ExpoenteInvalido() => Snackbar.Add("Expoente não é coprimo!", Severity.Error);
     

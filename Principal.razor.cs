@@ -9,6 +9,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using ElectronNET.API;
 using Kriptonita.Pages.Subpaginas;
 
 public interface IPrincipal
@@ -30,6 +31,10 @@ public interface IPrincipal
     public void Limpeza(string contem);
 
     public BigInteger GerarNumeroPrimo();
+
+    public void SalvarEmExecucao(string conteudo, string nome);
+
+    public Task<string> LerEmExecucao(string nome);
 }
 
 public class Principal : IPrincipal
@@ -617,7 +622,7 @@ public class Principal : IPrincipal
         {
             if (ChecarTimeout(relogio, 2000)) return -1;
             var rng = new RNGCryptoServiceProvider();
-            byte[] buffer = new byte[12];
+            byte[] buffer = new byte[16];
             rng.GetBytes(buffer);
             n = new BigInteger(buffer); //numero aleatorio
             if (MillerRabinPrimo(n, 25))
@@ -625,6 +630,20 @@ public class Principal : IPrincipal
                 return n;
             }
         }
+
+    }
+
+    public async void SalvarEmExecucao(string conteudo, string nome)
+    {
+        string path = await Electron.App.GetAppPathAsync();
+        Console.WriteLine("PATH ->"+Path.Join(path,$"/{nome}.txt"));
+        await File.WriteAllTextAsync(Path.Join(path,$"/{nome}.txt"),conteudo);
+    }
+
+    public async Task<string> LerEmExecucao(string nome)
+    {
+        string path = await Electron.App.GetAppPathAsync();
+        return File.ReadAllText(Path.Join(path, $"/{nome}.txt"));
 
     }
 }
