@@ -37,6 +37,8 @@ public interface IPrincipal
     public Task<string> LerEmExecucao(string nome);
 
     public string Criptografar(string mensagem, BigInteger n, int e);
+
+    public string Descriptografar(string mensagem, BigInteger p, BigInteger q, int e);
 }
 
 public class Principal : IPrincipal
@@ -624,7 +626,7 @@ public class Principal : IPrincipal
         {
             if (ChecarTimeout(relogio, 2000)) return -1;
             var rng = new RNGCryptoServiceProvider();
-            byte[] buffer = new byte[16];
+            byte[] buffer = new byte[1];
             rng.GetBytes(buffer);
             n = new BigInteger(buffer); //numero aleatorio
             if (MillerRabinPrimo(n, 25))
@@ -676,7 +678,7 @@ public class Principal : IPrincipal
         return cripto;
     }
 
-    public string Descriptografar(string mensagem, BigInteger n)
+    public string Descriptografar(string mensagem, BigInteger p, BigInteger q, int e)
     {
         List<char> letras = new List<char>
         {
@@ -684,6 +686,30 @@ public class Principal : IPrincipal
             'v', 'w', 'x', 'y', 'z',' '
         };
 
-        return "";
+        BigInteger mod = ((p - 1) * (q - 1));
+        BigInteger inv = EuclidesEstendido(e, (long)mod, "inverso").inverso.valor;
+        Console.WriteLine($"INVERSO {inv}");
+
+        string descripto = "";
+        string[] spl = mensagem.Split('\n');
+        BigInteger n = p * q;
+        
+        foreach (var linha in spl)
+        {
+            Console.WriteLine($"-------------- {linha} --------------");
+            if (linha.Length != 0)
+            {
+                BigInteger num = BigInteger.Parse(linha);
+  
+                Console.WriteLine($"N {n} | Linha {num} | inv {inv}");
+                int index = (int) (BigInteger.Pow(num, (int)inv)% n);
+                Console.WriteLine($"index {index}");
+                char atual = letras[index-2]; 
+                descripto += atual;
+                Console.WriteLine($"Descripto {atual}");
+            }
+        }
+
+        return descripto;
     }
 }

@@ -1,0 +1,74 @@
+﻿@page "/projeto/descripto"
+@using System.Numerics
+@using System.Diagnostics
+@using System.IO
+@using ElectronNET.API
+
+@inject ISnackbar Snackbar
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Descriptografar</MudText>
+
+<MudTextField Style="width: 78vw;" Label="Texto criptografado" Lines="4" T="string" @bind-Text="@cripto" Placeholder=":)"></MudTextField>
+
+<MudItem Style="display: flex">
+
+    <div style="width: 100px; margin-right: 10px">
+        <MudTextField T="BigInteger" @bind-Value="@p" Converter="converter" Immediate="true" Label="Primo 1"  Variant="Variant.Outlined"></MudTextField>
+    </div>
+    <div style="width: 100px; margin-right: 10px">
+        <MudTextField T="BigInteger" @bind-Value="@q" Converter="converter" Immediate="true" Label="Primo 2" Variant="Variant.Outlined"></MudTextField>
+    </div>
+    <div style="width: 100px; margin-right: 10px">
+        <MudTextField T="BigInteger" @bind-Value="@e" Converter="converter" Immediate="true" Label="Expoente" Variant="Variant.Outlined"></MudTextField>
+    </div>
+    
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@Gerar">Descriptografar</MudButton>
+
+</MudItem>
+
+<div style="width: 300px; margin-right: 10px">
+    <MudTextField T="string" @bind-Value="@mensagem" DebounceInterval="500" OnDebounceIntervalElapsed="@Gerar" Immediate="true" Label="Mensagem"  Variant="Variant.Outlined"></MudTextField></div>
+<br/>
+
+@code{
+
+    BigInteger p = new BigInteger(-1);
+    BigInteger q = new BigInteger(-1); 
+    BigInteger e = new BigInteger(-1); //expoente
+    BigInteger n = new BigInteger();
+
+    string cripto = "";
+    string mensagem = "";
+
+    protected override async void OnInitialized()
+    {
+        base.OnInitialized();
+        cripto = await _principal.LerEmExecucao("criptografado");
+        Ler();
+    }
+
+    void Gerar()
+    {
+        if (p != -1 && q != -1 && e != -1)
+        {
+            mensagem = _principal.Descriptografar(cripto, p, q, (int)e);
+        }
+    }
+    
+    async void Ler()
+    {
+        string r = await _principal.LerEmExecucao("chavepublica");
+        e = BigInteger.Parse(r.Split('\n')[1]);
+        p = BigInteger.Parse(r.Split('\n')[2]);
+        q = BigInteger.Parse(r.Split('\n')[3]);
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    Converter<BigInteger> converter = new Converter<BigInteger>
+    {
+        SetFunc = value => value.ToString(),
+        GetFunc = text => BigInteger.Parse(text),
+    };
+
+}

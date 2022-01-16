@@ -37,7 +37,10 @@
         string r = await _principal.LerEmExecucao("chavepublica");
         n = BigInteger.Parse(r.Split('\n')[0]);
         e = BigInteger.Parse(r.Split('\n')[1]);
-        chave = $"N = {n}\n\nE = {e}"; 
+        BigInteger p = BigInteger.Parse(r.Split('\n')[2]);
+        BigInteger q = BigInteger.Parse(r.Split('\n')[3]);
+        
+        chave = $"N = {n}\n\nE = {e}\n\nP = {p}\n\nQ = {q}"; 
         await InvokeAsync(StateHasChanged);
     }
 

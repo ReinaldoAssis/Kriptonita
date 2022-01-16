@@ -83,7 +83,7 @@
         Random rd = new Random();
         
         BigInteger num = (p - 1) * (q - 1);
-        n = num;
+        n = p*q;
 
         while (true)
         {
@@ -105,7 +105,7 @@
     {
         string path = await Electron.App.GetAppPathAsync();
         Console.WriteLine("PATH ->"+Path.Join(path,"/chavepublica.txt"));
-        await File.WriteAllTextAsync(Path.Join(path,"/chavepublica.txt"),$"{n}\n{e}");
+        await File.WriteAllTextAsync(Path.Join(path,"/chavepublica.txt"),$"{n}\n{e}\n{p}\n{q}");
     }
 
     void ExpoenteInvalido() => Snackbar.Add("Expoente não é coprimo!", Severity.Error);
