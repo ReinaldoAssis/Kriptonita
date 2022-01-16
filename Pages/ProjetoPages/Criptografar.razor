@@ -1,0 +1,51 @@
+﻿@page "/projeto/cripto"
+@using System.Numerics
+
+@inject IPrincipal _principal
+
+<MudText Typo="Typo.h4">Criptografar</MudText>
+
+<MudTextField Style="width: 78vw;" Label="Chave" Lines="4" T="string" @bind-Text="@chave" Placeholder="Chave pública"></MudTextField>
+<br/>
+<br/>
+<br/>
+<div style="width: 300px; margin-right: 10px">
+    <MudTextField T="string" @bind-Value="@mensagem" DebounceInterval="500" OnDebounceIntervalElapsed="@Gerar" Immediate="true" Label="Mensagem"  Variant="Variant.Outlined"></MudTextField></div>
+<br/>
+<br/>
+<br/>
+<MudTextField Style="width: 78vw;" Label="Resultado" Lines="4" T="string" @bind-Text="@texto" Placeholder=":)"></MudTextField>
+
+
+@code{
+
+    BigInteger n = new BigInteger();
+    BigInteger e = new BigInteger();
+
+    string texto;
+    string mensagem;
+    string chave;
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Ler();
+    }
+
+    async void Ler()
+    {
+        string r = await _principal.LerEmExecucao("chavepublica");
+        n = BigInteger.Parse(r.Split('\n')[0]);
+        e = BigInteger.Parse(r.Split('\n')[1]);
+        chave = $"N = {n}\n\nE = {e}"; 
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void Gerar()
+    {
+        texto = _principal.Criptografar(mensagem, n, (int) e);
+        _principal.SalvarEmExecucao(texto,"criptografado");
+        InvokeAsync(StateHasChanged);
+    }
+
+}

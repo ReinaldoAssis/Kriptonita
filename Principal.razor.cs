@@ -35,6 +35,8 @@ public interface IPrincipal
     public void SalvarEmExecucao(string conteudo, string nome);
 
     public Task<string> LerEmExecucao(string nome);
+
+    public string Criptografar(string mensagem, BigInteger n, int e);
 }
 
 public class Principal : IPrincipal
@@ -645,5 +647,43 @@ public class Principal : IPrincipal
         string path = await Electron.App.GetAppPathAsync();
         return File.ReadAllText(Path.Join(path, $"/{nome}.txt"));
 
+    }
+
+    public string Criptografar(string mensagem, BigInteger n, int e)
+    {
+        string cripto = "";
+        
+        List<char> letras = new List<char>
+        {
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+            'v', 'w', 'x', 'y', 'z',' '
+        };
+
+        List<int> buffer = new List<int>();
+        //List<BigInteger> criptografado = new List<BigInteger>();
+        
+        foreach(var x in mensagem) buffer.Add(letras.IndexOf(x)+2);
+
+        foreach (var x in buffer)
+        {
+            BigInteger result = BigInteger.Pow(x, e);
+            result %= n;
+            cripto += result+"\n";
+        }
+        
+        
+
+        return cripto;
+    }
+
+    public string Descriptografar(string mensagem, BigInteger n)
+    {
+        List<char> letras = new List<char>
+        {
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+            'v', 'w', 'x', 'y', 'z',' '
+        };
+
+        return "";
     }
 }
