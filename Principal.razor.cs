@@ -358,7 +358,7 @@ public class Principal : IPrincipal
             //simplificar congruencia
             long novoA = a;
             long novoB = b;
-            long AMmdc = MDCEuclides((int) a, (int) b).result; //mdc entre a e modulo
+            long AMmdc = (long)MDCEuclides((int) a, (int) b).result; //mdc entre a e modulo
 
             bool existe = congruencia % AMmdc == 0;
             
@@ -427,7 +427,7 @@ public class Principal : IPrincipal
             long b = long.Parse(sides[0]); //pega o b
             long a = long.Parse(xside[0].Replace("x", ""));
 
-            long mdc = MDCEuclides((int)a, (int)mod).result; //TODO: MUDAR PARA LONG!!
+            long mdc = (long)MDCEuclides((int)a, (int)mod).result; //TODO: MUDAR PARA LONG!!
 
             while (a % mdc == 0 && mod % mdc == 0 && b % mdc == 0 && mdc != 1) //simplifica a congruência
             {
@@ -626,7 +626,7 @@ public class Principal : IPrincipal
         {
             if (ChecarTimeout(relogio, 2000)) return -1;
             var rng = new RNGCryptoServiceProvider();
-            byte[] buffer = new byte[1];
+            byte[] buffer = new byte[2];
             rng.GetBytes(buffer);
             n = new BigInteger(buffer); //numero aleatorio
             if (MillerRabinPrimo(n, 25))
@@ -683,30 +683,32 @@ public class Principal : IPrincipal
         List<char> letras = new List<char>
         {
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
-            'v', 'w', 'x', 'y', 'z',' '
+            'v', 'w', 'x', 'y', 'z', ' '
         };
 
         BigInteger mod = ((p - 1) * (q - 1));
-        BigInteger inv = EuclidesEstendido(e, (long)mod, "inverso").inverso.valor;
+        BigInteger inv = EuclidesEstendido(e, (long) mod, "inverso").inverso.valor;
         Console.WriteLine($"INVERSO {inv}");
 
         string descripto = "";
         string[] spl = mensagem.Split('\n');
         BigInteger n = p * q;
-        
+
         foreach (var linha in spl)
         {
             Console.WriteLine($"-------------- {linha} --------------");
             if (linha.Length != 0)
             {
                 BigInteger num = BigInteger.Parse(linha);
-  
+
                 Console.WriteLine($"N {n} | Linha {num} | inv {inv}");
-                int index = (int) (BigInteger.Pow(num, (int)inv)% n);
+                //int index = (int) (BigInteger.Pow(num, (int)inv)% n);
+                int index = (int) (BigInteger.ModPow(num, (int) inv,n));
                 Console.WriteLine($"index {index}");
-                char atual = letras[index-2]; 
+                char atual = letras[index - 2];
                 descripto += atual;
                 Console.WriteLine($"Descripto {atual}");
+                
             }
         }
 

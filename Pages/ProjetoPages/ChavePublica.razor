@@ -22,6 +22,7 @@
     </div>
 
     <MudButton Color="Color.Dark" Variant="Variant.Filled" Size="Size.Large" OnClick="@(() => Gerar(true))">Gerar</MudButton>
+    <MudButton Color="Color.Dark" Variant="Variant.Filled" Style="margin-left:10px" Size="Size.Large" OnClick="@(() => Salvar())">Salvar</MudButton>
 
 </MudItem>
 @if (chave.n != -1)
@@ -103,9 +104,10 @@
 
     async void Salvar()
     {
+        chave = new {n = p * q, e = e};
         string path = await Electron.App.GetAppPathAsync();
         Console.WriteLine("PATH ->"+Path.Join(path,"/chavepublica.txt"));
-        await File.WriteAllTextAsync(Path.Join(path,"/chavepublica.txt"),$"{n}\n{e}\n{p}\n{q}");
+        await File.WriteAllTextAsync(Path.Join(path,"/chavepublica.txt"),$"{chave.n}\n{chave.e}\n{p}\n{q}");
     }
 
     void ExpoenteInvalido() => Snackbar.Add("Expoente não é coprimo!", Severity.Error);
