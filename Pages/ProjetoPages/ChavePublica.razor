@@ -105,7 +105,8 @@
     async void Salvar()
     {
         chave = new {n = p * q, e = e};
-        string path = await Electron.App.GetAppPathAsync();
+        string path = Path.GetDirectoryName(await Electron.App.GetAppPathAsync());
+        //path = path.Replace("app.asar\\", "");
         Console.WriteLine("PATH ->"+Path.Join(path,"/chavepublica.txt"));
         await File.WriteAllTextAsync(Path.Join(path,"/chavepublica.txt"),$"{chave.n}\n{chave.e}\n{p}\n{q}");
     }

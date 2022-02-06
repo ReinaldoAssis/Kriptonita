@@ -639,14 +639,19 @@ public class Principal : IPrincipal
 
     public async void SalvarEmExecucao(string conteudo, string nome)
     {
-        string path = await Electron.App.GetAppPathAsync();
+        //string path = await Electron.App.GetAppPathAsync();
+        string path = Path.GetDirectoryName(await Electron.App.GetAppPathAsync());
+        //path = path.Replace("app.asar\\", "");
+        
         Console.WriteLine("PATH ->"+Path.Join(path,$"/{nome}.txt"));
         await File.WriteAllTextAsync(Path.Join(path,$"/{nome}.txt"),conteudo);
     }
 
     public async Task<string> LerEmExecucao(string nome)
     {
-        string path = await Electron.App.GetAppPathAsync();
+        //string path = await Electron.App.GetAppPathAsync();
+        string path = Path.GetDirectoryName(await Electron.App.GetAppPathAsync());
+        //path = path.Replace("app.asar\\", "");
         return File.ReadAllText(Path.Join(path, $"/{nome}.txt"));
 
     }
